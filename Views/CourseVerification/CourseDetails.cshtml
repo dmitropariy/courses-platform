@@ -1,0 +1,66 @@
+﻿@model courses_platform.Models.CourseVerification
+
+@{
+    ViewData["Title"] = "Деталі заявки на курс";
+}
+
+
+<!-- Конкретна заявка сторінка:
+    Вивід інформації про курс: Спочатку - назва, опис загальний
+
+    Далі - Вивід усіх модулів, ти можеш перейти на кожен модуль, щоб побачити його деталі.
+    Спочатку просто список назв модуля в визначеному порядку. кнопка деталі для переходу на ЩЕ одну сторінку з деталями модуля.
+
+    Можливість прийняти - не прийняти заявку на курс. Дві кнопки
+
+    Кнопка повернутись назад
+-->
+
+<h2>Деталі заявки на курс</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h3>@Model.Course.Title</h3>
+        <p>@Model.Course.Description</p>
+        <p><b>Статус заявки:</b> @Model.Status</p>
+        @if (!string.IsNullOrEmpty(Model.ReviewComment))
+        {
+            <p><b>Коментар рев’юера:</b> @Model.ReviewComment</p>
+        }
+    </div>
+</div>
+
+<h4>Модулі курсу</h4>
+@if (Model.Course.Modules != null && Model.Course.Modules.Any())
+{
+    <ul class="list-group mb-3">
+        @foreach (var module in Model.Course.Modules.OrderBy(m => m.OrderNumber))
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                @module.Title
+                <a class="btn btn-sm btn-outline-primary"
+                   href="@Url.Action("ModuleDetails", "CourseVerification", new { moduleId = module.ModuleId })">
+                    Деталі
+                </a>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>Модулів ще немає.</p>
+}
+
+<div class="mb-3">
+    <form method="post" asp-action="ApproveCourse" class="d-inline">
+        <input type="hidden" name="verificationId" value="@Model.VerificationId" />
+        <button type="submit" class="btn btn-success">Прийняти заявку</button>
+    </form>
+
+    <form method="post" asp-action="RejectCourse" class="d-inline ms-2">
+        <input type="hidden" name="verificationId" value="@Model.VerificationId" />
+        <button type="submit" class="btn btn-danger">Відхилити заявку</button>
+    </form>
+
+    <a href="@Url.Action("Index", "CourseVerification")" class="btn btn-secondary ms-2">Повернутись назад</a>
+</div>

@@ -1,0 +1,54 @@
+﻿@model courses_platform.Models.Lesson
+
+@{
+    ViewData["Title"] = "Деталі уроку";
+}
+
+<h2>Деталі уроку: @Model.Title</h2>
+
+<div>
+    <p><strong>Назва уроку:</strong> @Model.Title</p>
+    <p><strong>Опис уроку:</strong> @Model.LessonDescription</p>
+    <p><strong>Порядок у модулі:</strong> @Model.OrderNumber</p>
+</div>
+
+<hr />
+
+<h3>Матеріали уроку</h3>
+
+@foreach (var block in Model.LessonContentBlocks.OrderBy(b => b.Order))
+{
+    <div class="mb-3 p-3 border rounded">
+        @switch (block.BlockType)
+        {
+            case "text":
+                <p>@block.Content</p>
+                break;
+
+            case "image":
+                if (!string.IsNullOrEmpty(block.MediaUrl))
+                {
+                    <img src="@block.MediaUrl" alt="Image block" class="img-fluid" />
+                }
+                break;
+
+            case "video":
+                if (!string.IsNullOrEmpty(block.MediaUrl))
+                {
+                    <video controls class="w-100">
+                        <source src="@block.MediaUrl" type="video/mp4" />
+                        Ваш браузер не підтримує відтворення відео.
+                    </video>
+                }
+                break;
+
+            default:
+                <p>Невідомий тип блоку: @block.BlockType</p>
+                break;
+        }
+    </div>
+}
+
+<hr />
+
+<a href="javascript:history.back()" class="btn btn-outline-secondary">Повернутись назад</a>

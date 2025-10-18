@@ -1,0 +1,45 @@
+﻿@model List<courses_platform.Models.Course>
+@{
+    ViewData["Title"] = "Усі курси";
+}
+
+<!-- Додати правильне посилання на сторінку енроллмент, додати ЛАБ 3 Правильне виведення автора та пошук за автором -->
+<h2>Усі підтверджені курси</h2>
+
+<form method="get" class="mb-4">
+    <input type="text" name="search" value="@ViewBag.Search" placeholder="Пошук по назві або автору" class="form-control" />
+    <button type="submit" class="btn btn-primary mt-2">Пошук</button>
+</form>
+
+<div class="row">
+    @foreach (var course in Model)
+    {
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">@course.Title</h5>
+                    <p class="card-text">@course.Description</p>
+                    <a href="@Url.Action("Enroll", "Enrollment", new { courseId = course.CourseId })" class="btn btn-success mt-auto">Записатись на курс</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+        {
+            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { search = ViewBag.Search, page = i })">@i</a>
+            </li>
+        }
+    </ul>
+</nav>
+
+<!-- Ця сторінка:
+   Список усіх курсів в системі. Вони мають бути підтвердженими. (у таблиці CourseVerification status = approved)
+   Виведення - Назва, короткий опис, автор, кнопка "Записатись на курс" - перехід на сторінку Енроллмент, її поки немає. Формат - типу як блоки а не таблиця.
+   Можливість пошуку по назві та автору (в одному полі, але шукає по двох)
+   Пагінація: 10 курсів на сторінку
+ -->

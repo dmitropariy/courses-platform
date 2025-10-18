@@ -47,6 +47,13 @@
     }
 </ul>
 
+<div>
+    <form action="/CourseCreation/SubmitCourse" method="post">
+        <input type="hidden" name="courseId" value="@Model.CourseId" />
+        <button type="submit" class="btn btn-success">Надіслати заявку на публікацію курсу</button>
+    </form>
+</div>
+
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -66,10 +73,16 @@
                                 `<li data-module-id="${data.moduleId}">
                                             ${data.orderNumber} - ${data.title}
                                             <p>${data.description}</p>
-                                            <div class="lessons" id="lessons-${data.moduleId}"></div>
                                             <input type="text" class="lessonTitle" placeholder="Назва уроку" />
                                             <input type="text" class="lessonDescription" placeholder="Опис уроку" />
                                             <button class="addLessonBtn btn btn-primary">Додати урок</button>
+                                            <div class="lessons" id="lessons-${data.moduleId}"></div>
+                                            <div>
+                                            <form action="/CourseCreation/CreateModuleAssignments" method="get">
+                                                <input type="hidden" name="moduleId" value="${data.moduleId}" />
+                                                <button type="submit" class="btn btn-success">Редагувати тестове завдання</button>
+                                            </form>
+                                            </div>
                                         </li>`
                             );
                             $('#moduleTitle').val('');

@@ -399,5 +399,40 @@ namespace courses_platform.Controllers
             return RedirectToAction("CreateModuleAssignments", new { moduleId });
         }
 
+        // POST: SubmitCourse
+        [HttpPost]
+        public IActionResult SubmitCourse(int courseId)
+        {
+            var course = _context.Courses.FirstOrDefault(c => c.CourseId == courseId);
+            if (course == null)
+            {
+                return NotFound();
+            }
+
+            // перевіряємо, чи вже є заявка на верифікацію для цього курсу
+            var existingVerification = _context.CourseVerifications
+                .FirstOrDefault(v => v.CourseId == courseId);
+
+            if (existingVerification != null)
+            {
+                TempData["Message"] = "Курс вже надіслано на перевірку.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var verification = new CourseVerification
+            {
+                CourseId = courseId,
+                Status = "pending", // нова заявка
+                VerifiedAt = null,
+                ReviewComment = ""
+            };
+
+            _context.CourseVerifications.Add(verification);
+            _context.SaveChanges();
+
+            TempData["Message"] = "Заявка на публікацію курсу надіслана.";
+            return RedirectToAction("Index", "Home");
+        }
+
     }
 }

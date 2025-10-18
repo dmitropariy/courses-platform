@@ -13,9 +13,9 @@ namespace courses_platform.Models
 
         // Додати в 3 лабі юзера-ревьюера пізніше
 
-        public string Status { get; set; } // approved / rejected
+        public string Status { get; set; } // approved / rejected / pending
 
-        public string ReviewComment { get; set; }
+        public string? ReviewComment { get; set; }
 
         public DateTime? VerifiedAt { get; set; }
 
