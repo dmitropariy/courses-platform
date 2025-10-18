@@ -34,6 +34,15 @@
                     </form>
                 }
             </div>
+
+            <!-- Кнопка для переходу на сторінку створення тесту -->
+            <div>
+                <form action="/CourseCreation/CreateModuleAssignments" method="get">
+                    <input type="hidden" name="moduleId" value="@m.ModuleId" />
+                    <button type="submit" class="btn btn-success">Редагувати тестове завдання</button>
+                </form>
+            </div>
+
         </li>
     }
 </ul>

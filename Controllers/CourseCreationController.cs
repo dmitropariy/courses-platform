@@ -245,5 +245,159 @@ namespace courses_platform.Controllers
             return RedirectToAction("CreateLessonContentBlocks", new { lessonId });
         }
 
+        // GET: сторінка створення тестових питань модуля
+        [HttpGet]
+        public IActionResult CreateModuleAssignments(int moduleId)
+        {
+            var module = _context.Modules
+                .Include(m => m.Assignments)
+                    .ThenInclude(a => a.Options)
+                .FirstOrDefault(m => m.ModuleId == moduleId);
+
+            if (module == null) return NotFound();
+            return View(module);
+        }
+
+        [HttpPost]
+        public IActionResult AddAssignment(
+         int moduleId,
+         string title,
+         string type,
+         string questionText,
+         List<string> optionCorrect,    // Список "true"/"false"
+         List<string> optionTexts,
+         string openTextAnswer)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                ModelState.AddModelError("", "Вкажіть назву питання");
+                return RedirectToAction("CreateModuleAssignments", new { id = moduleId });
+            }
+
+            var assignment = new Assignment
+            {
+                ModuleId = moduleId,
+                Title = title,
+                Type = type,
+                QuestionText = questionText,
+                Options = new List<AssignmentOption>()
+            };
+
+            if (type == "open_text")
+            {
+                // Для відкритого тексту зберігаємо один варіант
+                if (!string.IsNullOrWhiteSpace(openTextAnswer))
+                {
+                    assignment.Options.Add(new AssignmentOption
+                    {
+                        Text = openTextAnswer,
+                        IsCorrect = true
+                    });
+                }
+            }
+            else
+            {
+                // Перевіряємо, щоб optionTexts і optionCorrect були однакової довжини
+                int count = Math.Min(optionTexts.Count, optionCorrect.Count);
+                for (int i = 0; i < count; i++)
+                {
+                    assignment.Options.Add(new AssignmentOption
+                    {
+                        Text = optionTexts[i],
+                        IsCorrect = optionCorrect[i] == "true"
+                    });
+                }
+            }
+
+            // Збереження в базу
+            _context.Assignments.Add(assignment);
+            _context.SaveChanges();
+
+            return RedirectToAction("CreateModuleAssignments", new { moduleId = moduleId });
+        }
+
+
+        // GET: редагування питання
+        [HttpGet]
+        public IActionResult EditAssignment(int assignmentId)
+        {
+            var assignment = _context.Assignments
+                .Include(a => a.Options)
+                .FirstOrDefault(a => a.AssignmentId == assignmentId);
+
+            if (assignment == null) return NotFound();
+            return View(assignment);
+        }
+
+        [HttpPost]
+        public IActionResult EditAssignment(Assignment model, List<string> optionTexts, List<string> optionCorrect, string openTextAnswer)
+        {
+            var assignment = _context.Assignments
+                .Include(a => a.Options)
+                .FirstOrDefault(a => a.AssignmentId == model.AssignmentId);
+            if (assignment == null) return NotFound();
+
+            assignment.Title = model.Title;
+            assignment.Type = model.Type;
+            assignment.QuestionText = model.QuestionText;
+
+            // видаляємо старі опції
+            _context.AssignmentOptions.RemoveRange(assignment.Options);
+            _context.SaveChanges();
+
+            if (model.Type == "open_text")
+            {
+                _context.AssignmentOptions.Add(new AssignmentOption
+                {
+                    AssignmentId = assignment.AssignmentId,
+                    Text = openTextAnswer,
+                    IsCorrect = true
+                });
+            }
+            else if (optionTexts != null && optionTexts.Any())
+            {
+                for (int i = 0; i < optionTexts.Count; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(optionTexts[i]))
+                    {
+                        bool isCorrect = false;
+                        if (optionCorrect != null && optionCorrect.Count > i)
+                        {
+                            isCorrect = optionCorrect[i] == "true";
+                        }
+
+                        _context.AssignmentOptions.Add(new AssignmentOption
+                        {
+                            AssignmentId = assignment.AssignmentId,
+                            Text = optionTexts[i],
+                            IsCorrect = isCorrect
+                        });
+                    }
+                }
+
+            }
+
+            _context.SaveChanges();
+            return RedirectToAction("CreateModuleAssignments", new { moduleId = assignment.ModuleId });
+        }
+
+        // POST: видалення питання
+        [HttpPost]
+        public IActionResult DeleteAssignment(int assignmentId, int moduleId)
+        {
+            var assignment = _context.Assignments
+                .Include(a => a.Options)
+                .FirstOrDefault(a => a.AssignmentId == assignmentId);
+
+            if (assignment != null)
+            {
+                _context.AssignmentOptions.RemoveRange(assignment.Options);
+                _context.Assignments.Remove(assignment);
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("CreateModuleAssignments", new { moduleId });
+        }
+
     }
 }

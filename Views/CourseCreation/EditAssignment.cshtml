@@ -1,0 +1,114 @@
+﻿@model courses_platform.Models.Assignment
+
+<h2>Редагування питання "@Model.Title"</h2>
+
+<form asp-action="EditAssignment" method="post" id="editAssignmentForm">
+    <input type="hidden" asp-for="AssignmentId" />
+    <input type="hidden" asp-for="ModuleId" />
+
+    <label>Назва питання</label>
+    <input asp-for="Title" class="form-control" />
+
+    <label>Тип</label>
+    <select asp-for="Type" id="assignmentType" class="form-control mt-1">
+        <option value="quiz_single" selected="@(Model.Type == "quiz_single" ? "selected" : null)">Одна правильна</option>
+        <option value="quiz_multiple" selected="@(Model.Type == "quiz_multiple" ? "selected" : null)">Кілька правильних</option>
+        <option value="open_text" selected="@(Model.Type == "open_text" ? "selected" : null)">Відкрита відповідь</option>
+    </select>
+
+    <label class="mt-2">Текст питання</label>
+    <textarea asp-for="QuestionText" class="form-control" rows="3"></textarea>
+
+    <div id="optionsSection" class="mt-3" style="display:@(Model.Type != "open_text" ? "block" : "none")">
+        <h5>Варіанти відповідей</h5>
+        <div id="optionsList">
+            @for (int i = 0; i < Model.Options.Count; i++)
+            {
+                var opt = Model.Options.ElementAt(i);
+                <div class="option-item mb-2">
+                    <input type="text" name="optionTexts[@i]" class="form-control mb-1" value="@opt.Text" />
+                    <input type="checkbox" class="optionCorrectCheckbox" name="optionCorrect[@i]" value="true" @(opt.IsCorrect ? "checked" : "") /> Правильна
+                </div>
+            }
+        </div>
+        <button type="button" id="addOptionBtn" class="btn btn-outline-primary mt-2 btn-sm">+ Додати варіант</button>
+    </div>
+
+    <div id="openTextSection" class="mt-3" style="display:@(Model.Type == "open_text" ? "block" : "none")">
+        <label>Правильна відповідь</label>
+        <textarea name="openTextAnswer" class="form-control">@Model.Options.FirstOrDefault()?.Text</textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Зберегти</button>
+</form>
+
+@section Scripts {
+    <script>
+        const assignmentType = document.getElementById("assignmentType");
+        const optionsSection = document.getElementById("optionsSection");
+        const openTextSection = document.getElementById("openTextSection");
+        const addOptionBtn = document.getElementById("addOptionBtn");
+        const optionsList = document.getElementById("optionsList");
+        const form = document.getElementById("editAssignmentForm");
+
+        function getNextIndex() {
+            return optionsList.querySelectorAll(".option-item").length;
+        }
+
+        addOptionBtn.addEventListener("click", () => {
+            const index = getNextIndex();
+            const div = document.createElement("div");
+            div.classList.add("option-item", "mb-2");
+            div.innerHTML = `
+                    <input type="text" name="optionTexts[${index}]" class="form-control mb-1" placeholder="Варіант відповіді" />
+                    <input type="checkbox" class="optionCorrectCheckbox" name="optionCorrect[${index}]" value="true" /> Правильна
+                `;
+            optionsList.appendChild(div);
+            bindCheckboxBehavior();
+        });
+
+        function bindCheckboxBehavior() {
+            const type = assignmentType.value;
+            const boxes = document.querySelectorAll(".optionCorrectCheckbox");
+
+            boxes.forEach(box => {
+                box.removeEventListener("change", checkboxHandler);
+                box.addEventListener("change", checkboxHandler);
+            });
+
+            function checkboxHandler(e) {
+                if (type === "quiz_single" && e.target.checked) {
+                    boxes.forEach(b => { if (b !== e.target) b.checked = false; });
+                }
+            }
+        }
+
+        assignmentType.addEventListener("change", () => {
+            const type = assignmentType.value;
+            if (type === "open_text") {
+                optionsSection.style.display = "none";
+                openTextSection.style.display = "block";
+            } else {
+                optionsSection.style.display = "block";
+                openTextSection.style.display = "none";
+            }
+            bindCheckboxBehavior();
+        });
+
+        // Перед відправкою форми — створюємо hidden поля для всіх чекбоксів
+        form.addEventListener("submit", () => {
+            form.querySelectorAll("input[type=hidden][name^='optionCorrect']").forEach(i => i.remove());
+            const options = optionsList.querySelectorAll(".option-item");
+            options.forEach((opt, i) => {
+                const checkbox = opt.querySelector(".optionCorrectCheckbox");
+                const hidden = document.createElement("input");
+                hidden.type = "hidden";
+                hidden.name = `optionCorrect[${i}]`;
+                hidden.value = checkbox.checked ? "true" : "false";
+                form.appendChild(hidden);
+            });
+        });
+
+        bindCheckboxBehavior();
+    </script>
+}
