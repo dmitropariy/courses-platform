@@ -13,6 +13,8 @@ namespace courses_platform.Models
 
         public string Title { get; set; }
 
+        public string ModuleDescription { get; set; }
+
         public int OrderNumber { get; set; }
 
 

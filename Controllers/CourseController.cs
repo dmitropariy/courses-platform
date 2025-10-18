@@ -2,7 +2,7 @@
 
 namespace courses_platform.Controllers
 {
-    public class CoursesController : Controller
+    public class CourseController : Controller
     {
         public IActionResult Index()
         {
