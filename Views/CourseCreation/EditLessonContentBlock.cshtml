@@ -1,0 +1,57 @@
+﻿@model courses_platform.Models.LessonContentBlock
+
+<h2>Редагування блоку @Model.Order</h2>
+
+<form asp-action="EditLessonContentBlock" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="lessonContentBlockId" value="@Model.LessonContentBlockId" />
+    <input type="hidden" name="lessonId" value="@Model.LessonId" />
+
+    <label>Тип контенту</label>
+    <select name="blockType" id="blockType" class="form-control">
+        <option value="text" selected="@(Model.BlockType == "text")">Текст</option>
+        <option value="image" selected="@(Model.BlockType == "image")">Картинка</option>
+        <option value="video" selected="@(Model.BlockType == "video")">Відео</option>
+    </select>
+
+    <div id="textFields" style="margin-top:10px; display:none;">
+        <label>Текстовий контент</label>
+        <textarea name="content" class="form-control">@Model.Content</textarea>
+    </div>
+
+    <div id="mediaFields" style="margin-top:10px; display:none;">
+        <label>Медіафайл (картинка або відео)</label>
+        <input type="file" name="mediaFile" class="form-control" />
+        @if (!string.IsNullOrEmpty(Model.MediaUrl))
+        {
+            if (Model.BlockType == "image")
+            {
+                <p>Поточне зображення:</p>
+                <img src="@Model.MediaUrl" style="max-width:200px" />
+            }
+            else if (Model.BlockType == "video")
+            {
+                <p>Поточне відео:</p>
+                <video width="320" height="240" controls>
+                    <source src="@Model.MediaUrl" type="video/mp4" />
+                </video>
+            }
+        }
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Зберегти</button>
+</form>
+
+@section Scripts {
+    <script>
+        function updateFields() {
+            var type = document.getElementById("blockType").value;
+            document.getElementById("textFields").style.display = type === "text" ? "block" : "none";
+            document.getElementById("mediaFields").style.display = (type === "image" || type === "video") ? "block" : "none";
+        }
+
+        document.getElementById("blockType").addEventListener("change", updateFields);
+        updateFields(); // викликаємо при завантаженні
+    </script>
+}
+
+<!-- все як при створенні але едіт йой -->

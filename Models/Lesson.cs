@@ -20,6 +20,6 @@ namespace courses_platform.Models
 
         public Module Module { get; set; }
 
-        public ICollection<LessonContentBlock> LessonContentBlocks { get; set; }
+        public ICollection<LessonContentBlock> LessonContentBlocks { get; set; } = new List<LessonContentBlock>();
     }
 }

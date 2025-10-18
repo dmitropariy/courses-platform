@@ -1,0 +1,93 @@
+﻿@model courses_platform.Models.Lesson
+
+@{
+    ViewData["Title"] = "Заповнення матеріалу уроку";
+}
+
+<h2>Урок: @Model.Title</h2>
+<p>Модуль: @Model.Module.Title</p>
+
+<h3>Додати блок контенту</h3>
+<form asp-action="AddLessonContentBlock" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="lessonId" value="@Model.LessonId" />
+
+    <label>Тип контенту</label>
+    <select name="blockType" class="form-control" id="blockTypeSelect">
+        <option value="text">Текст</option>
+        <option value="image">Картинка</option>
+        <option value="video">Відео</option>
+    </select>
+
+    <div id="textContentDiv" class="mt-2">
+        <label>Контент (текст)</label>
+        <textarea name="content" class="form-control" placeholder="Введіть текст"></textarea>
+    </div>
+
+    <div id="mediaContentDiv" class="mt-2" style="display:none;">
+        <label>Виберіть файл</label>
+        <input type="file" name="mediaFile" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-success mt-2">Додати матеріал</button>
+</form>
+
+<hr />
+
+<h3>Матеріал уроку</h3>
+@foreach (var block in Model.LessonContentBlocks.OrderBy(b => b.Order))
+{
+    <div class="card mb-2 p-2">
+        <strong>Блок @block.Order - @block.BlockType</strong>
+        <p>@block.Content</p>
+        @if (!string.IsNullOrEmpty(block.MediaUrl))
+        {
+            if (block.BlockType == "image")
+            {
+                <img src="@block.MediaUrl" alt="Image" style="max-width:200px" />
+            }
+            else if (block.BlockType == "video")
+            {
+                <video width="320" height="240" controls>
+                    <source src="@block.MediaUrl" type="video/mp4">
+                    Ваш браузер не підтримує відео.
+                </video>
+            }
+        }
+        <form asp-action="EditLessonContentBlock" method="get" style="display:inline">
+            <input type="hidden" name="blockId" value="@block.LessonContentBlockId" />
+            <button type="submit" class="btn btn-secondary btn-sm">Редагувати</button>
+        </form>
+    </div>
+}
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#blockTypeSelect').on('change', function() {
+                var selected = $(this).val();
+                if (selected === 'text') {
+                    $('#textContentDiv').show();
+                    $('#mediaContentDiv').hide();
+                } else if (selected === 'image' || selected === 'video') {
+                    $('#textContentDiv').hide();
+                    $('#mediaContentDiv').show();
+                }
+            });
+        });
+    </script>
+}
+
+<!--
+       Сторінка Заповнення матеріалу урока:
+       Позначення що це за модуль та що це за урок. (назви)
+
+       Форма додавання матеріалу: Тип контенту (текст, картинка, відео),
+       контент (текстове поле або поле для вставки посилання на картинку/відео),
+
+       Кнопка Додати матеріал (додає матеріал до  загального виведення нижче
+
+       Загальне виведення нижче: Те як має відображатись матеріал у уроці: Поблоково по порядку все йде.
+       Позначати блоки виділяти їх для того щоб можна було натискати на кнопку редагувати
+       і редагувати цей блок
+-->

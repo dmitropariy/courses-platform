@@ -1,0 +1,119 @@
+﻿@model courses_platform.Models.Course
+
+@{
+    ViewData["Title"] = "Створення модулів";
+}
+
+<h2>Прекрасно! Створимо модулі для курсу: @Model.Title</h2>
+
+<h3>Додати модуль</h3>
+<input type="text" id="moduleTitle" placeholder="Назва модуля" />
+<input type="text" id="moduleDescription" placeholder="Опис модуля" />
+<button id="addModuleBtn" class="btn btn-success">Додати модуль</button>
+
+<ul id="modulesList">
+    @foreach (var m in Model.Modules)
+    {
+        <li data-module-id="@m.ModuleId">
+            @m.OrderNumber - @m.Title
+            <p>@m.ModuleDescription</p>
+
+            <!-- Форма додавання уроку -->
+            <input type="text" class="lessonTitle" placeholder="Назва уроку" />
+            <input type="text" class="lessonDescription" placeholder="Опис уроку" />
+            <button class="addLessonBtn btn btn-primary">Додати урок</button>
+
+            <div class="lessons" id="lessons-@m.ModuleId">
+                @foreach (var l in m.Lessons)
+                {
+                    <p>@l.OrderNumber - @l.Title</p>
+                    <p>@l.LessonDescription</p>
+                    <form action="/CourseCreation/CreateLessonContentBlocks" method="get">
+                        <input type="hidden" name="lessonId" value="@l.LessonId" />
+                        <button type="submit" class="btn btn-secondary">Заповнити матеріал уроку</button>
+                    </form>
+                }
+            </div>
+        </li>
+    }
+</ul>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(function () {
+
+            // ---------- Додавання модуля ----------
+            $('#addModuleBtn').click(function () {
+                var title = $('#moduleTitle').val();
+                var description = $('#moduleDescription').val();
+                var courseId = @Model.CourseId;
+
+                $.post('@Url.Action("AddModule", "CourseCreation")',
+                    { courseId: courseId, title: title, description: description },
+                    function (data) {
+                        if (data.success) {
+                            $('#modulesList').append(
+                                `<li data-module-id="${data.moduleId}">
+                                            ${data.orderNumber} - ${data.title}
+                                            <p>${data.description}</p>
+                                            <div class="lessons" id="lessons-${data.moduleId}"></div>
+                                            <input type="text" class="lessonTitle" placeholder="Назва уроку" />
+                                            <input type="text" class="lessonDescription" placeholder="Опис уроку" />
+                                            <button class="addLessonBtn btn btn-primary">Додати урок</button>
+                                        </li>`
+                            );
+                            $('#moduleTitle').val('');
+                            $('#moduleDescription').val('');
+                        }
+                    });
+            });
+
+            // ---------- Додавання уроку ----------
+            $(document).on('click', '.addLessonBtn', function () {
+                var parentLi = $(this).closest('li');
+                var moduleId = parentLi.data('module-id');
+                var title = parentLi.find('.lessonTitle').val();
+                var description = parentLi.find('.lessonDescription').val();
+
+                $.post('@Url.Action("AddLesson", "CourseCreation")',
+                    { moduleId: moduleId, title: title, lessonDescription: description },
+                    function (data) {
+                        if (data.success) {
+                            parentLi.find('.lessons').append(`
+                                <p>${data.orderNumber} - ${data.title}</p>
+                                <p>${data.description}</p>
+                                <form action="/CourseCreation/CreateLessonContentBlocks" method="get">
+                                    <input type="hidden" name="lessonId" value="${data.lessonId}" />
+                                    <button type="submit" class="btn btn-secondary">Заповнити матеріал уроку</button>
+                                </form>
+                            `);
+
+                            parentLi.find('.lessonTitle').val('');
+                            parentLi.find('.lessonDescription').val('');
+                        }
+                    });
+            });
+
+        });
+    </script>
+}
+
+
+
+
+<!--
+    Сторінка Створення модулів:
+
+    Форма створення модуля: Назва модуля, опис модуля, порядок модуля у курсі,
+    Кнопка Додати модуль (додає модуль до списку нижче без перезавантаження сторінки),
+
+    Одразу у списку нижче ти можеш цей блок розкрити і всередині буде форма для додавання уроків до цього модуля:
+    Форма створення уроку: Назва уроку, порядок уроку у модулі, тип контенту (текст, картинка, відео),
+    контент (текстове поле або поле для вставки посилання на картинку/відео),
+
+    Кнопка Додати урок (додає урок до списку нижче без перезавантаження сторінки)
+
+    В списку нижче відображаються усі додані уроки до цього модуля з їх назвами,
+    описом і в правильному порядку + кнопка перейти до заповнення матеріалу урока
+-->

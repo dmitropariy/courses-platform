@@ -14,9 +14,9 @@ namespace courses_platform.Models
 
         public string BlockType { get; set; } // Наприклад: "text", "image", "video"
 
-        public string Content { get; set; } // text block
+        public string? Content { get; set; } // text block
         
-        public string MediaUrl { get; set; } // image or video URL
+        public string? MediaUrl { get; set; } // image or video URL
         
         public int Order { get; set; }
 

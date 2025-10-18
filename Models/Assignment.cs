@@ -19,7 +19,7 @@ namespace courses_platform.Models
 
 
         public Module Module { get; set; }
-        public ICollection<AssignmentOption> Options { get; set; }
-        public ICollection<Submission> Submissions { get; set; }
+        public ICollection<AssignmentOption> Options { get; set; } = new List<AssignmentOption>();
+        public ICollection<Submission> Submissions { get; set; } = new List<Submission>();
     }
 }

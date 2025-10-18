@@ -19,7 +19,7 @@ namespace courses_platform.Models
 
 
         public Course Course { get; set; }
-        public ICollection<Lesson> Lessons { get; set; }
-        public ICollection<Assignment> Assignments { get; set; }
-    }
+        public ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
+        public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
+    } 
 }

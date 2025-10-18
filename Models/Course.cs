@@ -18,8 +18,8 @@ namespace courses_platform.Models
         public int CompletedCount { get; set; }
 
 
-        public ICollection<Module> Modules { get; set; }
-        public ICollection<CourseVerification> Verifications { get; set; } // до багатьох тому що може бути внесена правка і перевірена знову
-        public ICollection<Certificate> Certificates { get; set; }
+        public ICollection<Module> Modules { get; set; } = new List<Module>();
+        public ICollection<CourseVerification> Verifications { get; set; } = new List<CourseVerification>(); // до багатьох тому що може бути внесена правка і перевірена знову
+        public ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
     }
 }
