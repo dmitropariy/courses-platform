@@ -13,13 +13,15 @@ namespace courses_platform.Controllers
             _context = context;
         }
 
-        // ---------- Створення курсу
+        // GET: Сторінка створення курсу
+        [HttpGet]
         public IActionResult CreateCourse()
         {
             var course = new Course();
             return View(course);
         }
 
+        // POST: Створення курсу
         [HttpPost]
         public IActionResult CreateCourse(Course course)
         {
@@ -35,7 +37,8 @@ namespace courses_platform.Controllers
             return View(course);
         }
 
-        // ---------- Сторінка створення модулів
+        // GET: Сторінка створення модулів
+        [HttpGet]
         public IActionResult CreateModules(int courseId)
         {
             var course = _context.Courses
@@ -49,14 +52,13 @@ namespace courses_platform.Controllers
             return View(course);
         }
 
-        // ---------- Додавання модуля ----------
+        // POST: Створення модуля
         [HttpPost]
         public IActionResult AddModule(int courseId, string title, string description)
         {
             if (string.IsNullOrWhiteSpace(title))
                 return BadRequest("Назва модуля обов'язкова");
 
-            // Обчислення порядку
             int nextOrder = 1;
             var lastModule = _context.Modules
                 .Where(m => m.CourseId == courseId)
@@ -85,14 +87,13 @@ namespace courses_platform.Controllers
             });
         }
 
-        // ---------- Додавання уроку ----------
+        // POST: Створення уроку
         [HttpPost]
         public IActionResult AddLesson(int moduleId, string title, string lessonDescription)
         {
             if (string.IsNullOrWhiteSpace(title))
                 return BadRequest("Назва уроку обов'язкова");
 
-            // Обчислення порядку
             int nextOrder = 1;
             var lastLesson = _context.Lessons
                 .Where(l => l.ModuleId == moduleId)
@@ -122,6 +123,7 @@ namespace courses_platform.Controllers
         }
 
         // GET: сторінка заповнення матеріалу уроку
+        [HttpGet]
         public IActionResult CreateLessonContentBlocks(int lessonId)
         {
             var lesson = _context.Lessons
@@ -189,6 +191,7 @@ namespace courses_platform.Controllers
         }
 
         // GET: редагування блоку
+        [HttpGet]
         public IActionResult EditLessonContentBlock(int blockId)
         {
             var block = _context.LessonContentBlocks
@@ -258,20 +261,21 @@ namespace courses_platform.Controllers
             return View(module);
         }
 
+        // POST: додавання питання до модуля
         [HttpPost]
         public IActionResult AddAssignment(
          int moduleId,
          string title,
          string type,
          string questionText,
-         List<string> optionCorrect,    // Список "true"/"false"
+         List<string> optionCorrect,
          List<string> optionTexts,
          string openTextAnswer)
         {
             if (string.IsNullOrWhiteSpace(title))
             {
                 ModelState.AddModelError("", "Вкажіть назву питання");
-                return RedirectToAction("CreateModuleAssignments", new { id = moduleId });
+                return RedirectToAction("CreateModuleAssignments", new { moduleId });
             }
 
             var assignment = new Assignment
@@ -285,7 +289,6 @@ namespace courses_platform.Controllers
 
             if (type == "open_text")
             {
-                // Для відкритого тексту зберігаємо один варіант
                 if (!string.IsNullOrWhiteSpace(openTextAnswer))
                 {
                     assignment.Options.Add(new AssignmentOption
@@ -297,7 +300,6 @@ namespace courses_platform.Controllers
             }
             else
             {
-                // Перевіряємо, щоб optionTexts і optionCorrect були однакової довжини
                 int count = Math.Min(optionTexts.Count, optionCorrect.Count);
                 for (int i = 0; i < count; i++)
                 {
@@ -309,11 +311,10 @@ namespace courses_platform.Controllers
                 }
             }
 
-            // Збереження в базу
             _context.Assignments.Add(assignment);
             _context.SaveChanges();
 
-            return RedirectToAction("CreateModuleAssignments", new { moduleId = moduleId });
+            return RedirectToAction("CreateModuleAssignments", new { moduleId });
         }
 
 
@@ -329,6 +330,7 @@ namespace courses_platform.Controllers
             return View(assignment);
         }
 
+        // POST: редагування питання
         [HttpPost]
         public IActionResult EditAssignment(Assignment model, List<string> optionTexts, List<string> optionCorrect, string openTextAnswer)
         {
@@ -341,7 +343,6 @@ namespace courses_platform.Controllers
             assignment.Type = model.Type;
             assignment.QuestionText = model.QuestionText;
 
-            // видаляємо старі опції
             _context.AssignmentOptions.RemoveRange(assignment.Options);
             _context.SaveChanges();
 
@@ -381,7 +382,7 @@ namespace courses_platform.Controllers
             return RedirectToAction("CreateModuleAssignments", new { moduleId = assignment.ModuleId });
         }
 
-        // POST: видалення питання
+        // POST: Видалення питання
         [HttpPost]
         public IActionResult DeleteAssignment(int assignmentId, int moduleId)
         {
@@ -399,7 +400,7 @@ namespace courses_platform.Controllers
             return RedirectToAction("CreateModuleAssignments", new { moduleId });
         }
 
-        // POST: SubmitCourse
+        // POST: Надіслання курсу на верифікацію
         [HttpPost]
         public IActionResult SubmitCourse(int courseId)
         {
@@ -409,7 +410,6 @@ namespace courses_platform.Controllers
                 return NotFound();
             }
 
-            // перевіряємо, чи вже є заявка на верифікацію для цього курсу
             var existingVerification = _context.CourseVerifications
                 .FirstOrDefault(v => v.CourseId == courseId);
 
@@ -422,7 +422,7 @@ namespace courses_platform.Controllers
             var verification = new CourseVerification
             {
                 CourseId = courseId,
-                Status = "pending", // нова заявка
+                Status = "pending",
                 VerifiedAt = null,
                 ReviewComment = ""
             };

@@ -13,7 +13,9 @@ public class CourseVerificationController : Controller
         _context = context;
     }
 
+    // LAB3 : Додати пошук по імені автора курсу
     // GET: Список всіх заявок
+    [HttpGet]
     public IActionResult Index(string search, int page = 1)
     {
         var query = _context.CourseVerifications
@@ -44,6 +46,7 @@ public class CourseVerificationController : Controller
     }
 
     // GET: Деталі конкретної заявки
+    [HttpGet]
     public IActionResult CourseDetails(int verificationId)
     {
         var verification = _context.CourseVerifications
@@ -88,7 +91,7 @@ public class CourseVerificationController : Controller
         return RedirectToAction("Index");
     }
 
-    // GET: ModuleDetails
+    // GET: Перегляд деталей модуля (Уроки + Тестове завдання)
     [HttpGet]
     public IActionResult ModuleDetails(int moduleId)
     {
@@ -101,13 +104,12 @@ public class CourseVerificationController : Controller
             return NotFound();
         }
 
-        // Впорядкувати уроки за OrderNumber
         module.Lessons = module.Lessons.OrderBy(l => l.OrderNumber).ToList();
 
         return View(module);
     }
 
-    // GET: перегляд тестового завдання модуля
+    // GET: Перегляд тестового завдання модуля
     [HttpGet]
     public IActionResult ModuleAssignments(int moduleId)
     {
@@ -123,7 +125,8 @@ public class CourseVerificationController : Controller
         return View(module);
     }
 
-    // GET: LessonDetails
+    // GET: Перегляд деталей уроку (КонтентБлоки)
+    [HttpGet]
     public IActionResult LessonDetails(int lessonId)
     {
         var lesson = _context.Lessons

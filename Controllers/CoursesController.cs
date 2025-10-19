@@ -16,7 +16,8 @@ namespace courses_platform.Controllers
 
 
         // ЛАБ 3: Додати пошук за автором курсу
-        // GET: Courses
+        // GET: Список всіх курсів
+        [HttpGet]
         public IActionResult Index(string search, int page = 1)
         {
             var query = _context.Courses
