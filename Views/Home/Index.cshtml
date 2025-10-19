@@ -10,22 +10,13 @@
     </div>
 }
 
+<div class="mt-4" style="text-align: center">
+    <p>Увійти як професор</p>
+    <a asp-controller="CourseCreation" asp-action="CreateCourse" class="btn btn-primary mb-3">Login as Professor</a>
 
-<p> Увійти як професор </p>
+    <p>Увійти як учень</p>
+    <a asp-controller="Courses" asp-action="Index" class="btn btn-success mb-3">Login as Student</a>
 
-<button>
-    <a asp-controller="CourseCreation" asp-action="CreateCourse">Login as Professor</a>
-</button>
-
-<p> Увійти як учень </p>
-
-<button>
-    <a asp-controller="Courses" asp-action="Index">Login as Student</a>
-</button>
-
-<p> Увійти як адмін сайту </p>
-
-<button>
-    <a asp-controller="CourseVerification" asp-action="Index">Login as Admin</a>
-</button>
-
+    <p>Увійти як адмін сайту</p>
+    <a asp-controller="CourseVerification" asp-action="Index" class="btn btn-warning mb-3">Login as Admin</a>
+</div>
