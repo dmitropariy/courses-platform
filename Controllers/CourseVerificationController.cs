@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using courses_platform.Models;
 using System;
+using Microsoft.AspNetCore.Authorization;
 
 public class CourseVerificationController : Controller
 {
@@ -16,6 +17,7 @@ public class CourseVerificationController : Controller
     // LAB3 : Додати пошук по імені автора курсу
     // GET: Список всіх заявок
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public IActionResult Index(string search, int page = 1)
     {
         var query = _context.CourseVerifications

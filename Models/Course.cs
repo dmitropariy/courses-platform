@@ -21,5 +21,7 @@ namespace courses_platform.Models
         public ICollection<Module> Modules { get; set; } = new List<Module>();
         public ICollection<CourseVerification> Verifications { get; set; } = new List<CourseVerification>(); // до багатьох тому що може бути внесена правка і перевірена знову
         public ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
+        public ICollection<StudentCourse>? StudentCourses { get; set; }
+        public ICollection<ProfessorCourse>? ProfessorCourses { get; set; }
     }
 }

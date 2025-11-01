@@ -1,20 +1,24 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using courses_platform.Models;
 using Microsoft.EntityFrameworkCore;
+using courses_platform.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace courses_platform.Controllers
 {
     public class CourseCreationController : Controller
     {
         private readonly ApplicationDbContext _context;
-
-        public CourseCreationController(ApplicationDbContext context)
+        private readonly CloudinaryService _cloudinary;
+        public CourseCreationController(ApplicationDbContext context, CloudinaryService cloudinary)
         {
             _context = context;
+            _cloudinary = cloudinary;
         }
 
         // GET: Сторінка створення курсу
         [HttpGet]
+        [Authorize(Roles = "Professor")]
         public IActionResult CreateCourse()
         {
             var course = new Course();
@@ -23,6 +27,7 @@ namespace courses_platform.Controllers
 
         // POST: Створення курсу
         [HttpPost]
+        [Authorize(Roles = "Professor")]
         public IActionResult CreateCourse(Course course)
         {
             if (ModelState.IsValid)
@@ -138,7 +143,7 @@ namespace courses_platform.Controllers
 
         // POST: додавання нового контент-блоку
         [HttpPost]
-        public IActionResult AddLessonContentBlock(int lessonId, string blockType, string content, IFormFile? mediaFile)
+        public async Task<IActionResult> AddLessonContentBlock(int lessonId, string blockType, string content, IFormFile? mediaFile)
         {
             var lesson = _context.Lessons
                 .Include(l => l.Module)
@@ -153,26 +158,9 @@ namespace courses_platform.Controllers
 
             string? mediaUrl = null;
 
-            // Якщо користувач завантажив файл
             if (mediaFile != null && mediaFile.Length > 0)
             {
-                // Створюємо папку wwwroot/uploads якщо не існує
-                string uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-                if (!Directory.Exists(uploadsPath))
-                    Directory.CreateDirectory(uploadsPath);
-
-                // Генеруємо унікальне ім'я файлу
-                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(mediaFile.FileName);
-                string filePath = Path.Combine(uploadsPath, fileName);
-
-                // Зберігаємо файл
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    mediaFile.CopyTo(stream);
-                }
-
-                // Шлях для браузера
-                mediaUrl = "/uploads/" + fileName;
+                mediaUrl = await _cloudinary.UploadFileAsync(mediaFile);
             }
 
             var block = new LessonContentBlock
@@ -205,7 +193,7 @@ namespace courses_platform.Controllers
 
         // POST: збереження редагованого блоку
         [HttpPost]
-        public IActionResult EditLessonContentBlock(int lessonContentBlockId, int lessonId, string blockType, string? content, IFormFile? mediaFile)
+        public async Task<IActionResult> EditLessonContentBlock(int lessonContentBlockId, int lessonId, string blockType, string? content, IFormFile? mediaFile)
         {
             var block = _context.LessonContentBlocks.FirstOrDefault(b => b.LessonContentBlockId == lessonContentBlockId);
             if (block == null) return NotFound();
@@ -223,22 +211,9 @@ namespace courses_platform.Controllers
             {
                 block.Content = null;
 
-                // Якщо завантажено новий файл — зберігаємо його
                 if (mediaFile != null && mediaFile.Length > 0)
                 {
-                    string uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-                    if (!Directory.Exists(uploadsPath))
-                        Directory.CreateDirectory(uploadsPath);
-
-                    string fileName = Guid.NewGuid().ToString() + Path.GetExtension(mediaFile.FileName);
-                    string filePath = Path.Combine(uploadsPath, fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        mediaFile.CopyTo(stream);
-                    }
-
-                    block.MediaUrl = "/uploads/" + fileName;
+                    block.MediaUrl = await _cloudinary.UploadFileAsync(mediaFile);
                 }
             }
 

@@ -11,6 +11,7 @@ namespace courses_platform.Models
         {
         }
 
+        public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Module> Modules { get; set; }
         public DbSet<Lesson> Lessons { get; set; }
@@ -20,6 +21,8 @@ namespace courses_platform.Models
         public DbSet<Submission> Submissions { get; set; }
         public DbSet<Certificate> Certificates { get; set; }
         public DbSet<CourseVerification> CourseVerifications { get; set; }
+        public DbSet<StudentCourse> StudentCourses { get; set; }
+        public DbSet<ProfessorCourse> ProfessorCourses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -82,6 +85,22 @@ namespace courses_platform.Models
                 .WithMany(c => c.Verifications)
                 .HasForeignKey(v => v.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AppUser>()
+                .HasIndex(u => u.ExternalUserId)
+                .IsUnique();
+
+            modelBuilder.Entity<StudentCourse>()
+                .HasOne(sc => sc.Student)
+                .WithMany(u => u.StudentCourses)
+                .HasForeignKey(sc => sc.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ProfessorCourse>()
+                .HasOne(pc => pc.Professor)
+                .WithMany(u => u.ProfessorCourses)
+                .HasForeignKey(pc => pc.ProfessorId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

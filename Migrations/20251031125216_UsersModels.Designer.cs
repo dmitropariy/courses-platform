@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using courses_platform.Models;
 
@@ -11,9 +12,11 @@ using courses_platform.Models;
 namespace courses_platform.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251031125216_UsersModels")]
+    partial class UsersModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,10 +33,23 @@ namespace courses_platform.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("ExternalUserId")
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
@@ -434,7 +450,7 @@ namespace courses_platform.Migrations
             modelBuilder.Entity("courses_platform.Models.ProfessorCourse", b =>
                 {
                     b.HasOne("courses_platform.Models.Course", "Course")
-                        .WithMany("ProfessorCourses")
+                        .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -453,7 +469,7 @@ namespace courses_platform.Migrations
             modelBuilder.Entity("courses_platform.Models.StudentCourse", b =>
                 {
                     b.HasOne("courses_platform.Models.Course", "Course")
-                        .WithMany("StudentCourses")
+                        .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -499,10 +515,6 @@ namespace courses_platform.Migrations
                     b.Navigation("Certificates");
 
                     b.Navigation("Modules");
-
-                    b.Navigation("ProfessorCourses");
-
-                    b.Navigation("StudentCourses");
 
                     b.Navigation("Verifications");
                 });
