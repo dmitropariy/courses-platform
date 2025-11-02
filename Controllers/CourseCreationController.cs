@@ -44,6 +44,7 @@ namespace courses_platform.Controllers
 
         // GET: Сторінка створення модулів
         [HttpGet]
+        [Authorize(Roles = "Professor")]
         public IActionResult CreateModules(int courseId)
         {
             var course = _context.Courses
@@ -59,6 +60,7 @@ namespace courses_platform.Controllers
 
         // POST: Створення модуля
         [HttpPost]
+        [Authorize(Roles = "Professor")]
         public IActionResult AddModule(int courseId, string title, string description)
         {
             if (string.IsNullOrWhiteSpace(title))
@@ -94,6 +96,7 @@ namespace courses_platform.Controllers
 
         // POST: Створення уроку
         [HttpPost]
+        [Authorize(Roles = "Professor")]
         public IActionResult AddLesson(int moduleId, string title, string lessonDescription)
         {
             if (string.IsNullOrWhiteSpace(title))
@@ -129,6 +132,7 @@ namespace courses_platform.Controllers
 
         // GET: сторінка заповнення матеріалу уроку
         [HttpGet]
+        [Authorize(Roles = "Professor")]
         public IActionResult CreateLessonContentBlocks(int lessonId)
         {
             var lesson = _context.Lessons
@@ -143,6 +147,7 @@ namespace courses_platform.Controllers
 
         // POST: додавання нового контент-блоку
         [HttpPost]
+        [Authorize(Roles = "Professor")]
         public async Task<IActionResult> AddLessonContentBlock(int lessonId, string blockType, string content, IFormFile? mediaFile)
         {
             var lesson = _context.Lessons
@@ -180,6 +185,7 @@ namespace courses_platform.Controllers
 
         // GET: редагування блоку
         [HttpGet]
+        [Authorize(Roles = "Professor")]
         public IActionResult EditLessonContentBlock(int blockId)
         {
             var block = _context.LessonContentBlocks
@@ -193,6 +199,7 @@ namespace courses_platform.Controllers
 
         // POST: збереження редагованого блоку
         [HttpPost]
+        [Authorize(Roles = "Professor")]
         public async Task<IActionResult> EditLessonContentBlock(int lessonContentBlockId, int lessonId, string blockType, string? content, IFormFile? mediaFile)
         {
             var block = _context.LessonContentBlocks.FirstOrDefault(b => b.LessonContentBlockId == lessonContentBlockId);
@@ -225,6 +232,7 @@ namespace courses_platform.Controllers
 
         // GET: сторінка створення тестових питань модуля
         [HttpGet]
+        [Authorize(Roles = "Professor")]
         public IActionResult CreateModuleAssignments(int moduleId)
         {
             var module = _context.Modules
@@ -238,6 +246,7 @@ namespace courses_platform.Controllers
 
         // POST: додавання питання до модуля
         [HttpPost]
+        [Authorize(Roles = "Professor")]
         public IActionResult AddAssignment(
          int moduleId,
          string title,
@@ -295,6 +304,7 @@ namespace courses_platform.Controllers
 
         // GET: редагування питання
         [HttpGet]
+        [Authorize(Roles = "Professor")]
         public IActionResult EditAssignment(int assignmentId)
         {
             var assignment = _context.Assignments
@@ -307,6 +317,7 @@ namespace courses_platform.Controllers
 
         // POST: редагування питання
         [HttpPost]
+        [Authorize(Roles = "Professor")]
         public IActionResult EditAssignment(Assignment model, List<string> optionTexts, List<string> optionCorrect, string openTextAnswer)
         {
             var assignment = _context.Assignments
@@ -359,6 +370,7 @@ namespace courses_platform.Controllers
 
         // POST: Видалення питання
         [HttpPost]
+        [Authorize(Roles = "Professor")]
         public IActionResult DeleteAssignment(int assignmentId, int moduleId)
         {
             var assignment = _context.Assignments
@@ -377,6 +389,7 @@ namespace courses_platform.Controllers
 
         // POST: Надіслання курсу на верифікацію
         [HttpPost]
+        [Authorize(Roles = "Professor")]
         public IActionResult SubmitCourse(int courseId)
         {
             var course = _context.Courses.FirstOrDefault(c => c.CourseId == courseId);

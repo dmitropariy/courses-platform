@@ -17,17 +17,11 @@ namespace courses_platform.Controllers
             _logger = logger;
         }
 
+        // гуест пейдж, опис функіональності лаб + кнопки для входу як професор чи студент
         [AllowAnonymous]
         public IActionResult Index()
         {
             return View();
-        }
-
-        [Authorize]
-        public IActionResult Profile()
-        {
-            var claims = User.Claims.Select(c => new { c.Type, c.Value });
-            return Json(claims);
         }
 
         public IActionResult Privacy()
@@ -40,22 +34,5 @@ namespace courses_platform.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Logout()
-        {
-            // triggers both local and remote sign-outs
-            var callbackUrl = Url.Action("Index", "Home", values: null, protocol: Request.Scheme);
-            return SignOut(
-                new AuthenticationProperties
-                {
-                    RedirectUri = callbackUrl
-                },
-                OpenIdConnectDefaults.AuthenticationScheme,
-                CookieAuthenticationDefaults.AuthenticationScheme);
-        }
-
-
     }
 }

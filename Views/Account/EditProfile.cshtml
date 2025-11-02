@@ -1,0 +1,30 @@
+﻿@model courses_platform.Models.UserProfileViewModel
+
+<form asp-action="EditProfile" method="post" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+    <div class="mb-3">
+        <label asp-for="FullName" class="form-label">Ім'я</label>
+        <input asp-for="FullName" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label">Email (не редагується)</label>
+        <input asp-for="Email" class="form-control" readonly />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Bio" class="form-label">Біо</label>
+        <textarea asp-for="Bio" class="form-control" rows="3"></textarea>
+    </div>
+    <div class="mb-3">
+        <label asp-for="SocialLinks" class="form-label">Соцмережі</label>
+        <input asp-for="SocialLinks" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Фото профілю</label>
+        <input type="file" name="PhotoFile" class="form-control" />
+        @if (!string.IsNullOrEmpty(Model.MediaUrl))
+        {
+            <img src="@Model.MediaUrl" alt="Фото профілю" class="img-thumbnail mt-2" style="max-width:200px;" />
+        }
+    </div>
+    <button type="submit" class="btn btn-primary">Зберегти</button>
+</form>

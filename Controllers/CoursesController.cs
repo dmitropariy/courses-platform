@@ -15,23 +15,10 @@ namespace courses_platform.Controllers
             _context = context;
         }
 
-        [Authorize]
-        public IActionResult Claims()
-        {
-            return Json(User.Claims.Select(c => new { c.Type, c.Value }));
-        }
-
-        [Authorize]
-        public IActionResult Test()
-        {
-            var claims = User.Claims.Select(c => $"{c.Type}: {c.Value}");
-            return Content(string.Join("\n", claims));
-        }
-
         // ЛАБ 3: Додати пошук за автором курсу
         // GET: Список всіх курсів
         [HttpGet]
-        [Authorize(Roles = "Student")]
+        [Authorize(Roles = "Student, Professor")]
         public IActionResult Index(string search, int page = 1)
         {
             var query = _context.Courses
