@@ -28,7 +28,10 @@ namespace courses_platform.Controllers
         [Authorize]
         public async Task<IActionResult> ProfileStudent(int id)
         {
-            var localUser = await _context.AppUsers.FirstOrDefaultAsync(u => u.Id == id);
+            var localUser = await _context.AppUsers.Include(u => u.StudentCourses)
+                .ThenInclude(sc => sc.Course)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
             if (localUser == null) return NotFound();
 
             var profile = await _userApiService.GetUserProfileAsync(localUser.ExternalUserId);
@@ -37,15 +40,36 @@ namespace courses_platform.Controllers
             var currentExternalId = User.FindFirst("sub")?.Value;
             bool canEdit = currentExternalId == localUser.ExternalUserId;
 
-            ViewBag.CanEdit = canEdit;
+            var courses = localUser.StudentCourses?
+                .Where(sc => sc.Course != null)
+                .Select(sc => new StudentCourseViewModel
+                {
+                    CourseId = sc.Course!.CourseId,
+                    Title = sc.Course.Title,
+                    Description = sc.Course.Description,
+                    CompletedCount = sc.Course.CompletedCount,
+                    IsCompleted = sc.IsCompleted,
+                    CompletedTime = sc.CompletedTime
+                }).ToList() ?? new List<StudentCourseViewModel>();
 
-            return View(profile);
+            var model = new StudentProfileViewModel
+            {
+                Profile = profile,
+                Courses = courses,
+                CanEdit = canEdit
+            };
+
+            return View(model);
         }
+
 
         [Authorize]
         public async Task<IActionResult> ProfileProfessor(int id)
         {
-            var localUser = await _context.AppUsers.FirstOrDefaultAsync(u => u.Id == id);
+            var localUser = await _context.AppUsers.Include(u => u.ProfessorCourses)
+                .ThenInclude(pc => pc.Course)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
             if (localUser == null) return NotFound();
 
             var profile = await _userApiService.GetUserProfileAsync(localUser.ExternalUserId);
@@ -54,9 +78,24 @@ namespace courses_platform.Controllers
             var currentExternalId = User.FindFirst("sub")?.Value;
             bool canEdit = currentExternalId == localUser.ExternalUserId;
 
-            ViewBag.CanEdit = canEdit;
+            var courses = localUser.ProfessorCourses?
+                .Where(pc => pc.Course != null)
+                .Select(pc => new ProfessorCourseViewModel
+                {
+                    CourseId = pc.Course!.CourseId,
+                    Title = pc.Course.Title,
+                    Description = pc.Course.Description,
+                    CompletedCount = pc.Course.CompletedCount
+                }).ToList() ?? new List<ProfessorCourseViewModel>();
 
-            return View(profile);
+            var model = new ProfessorProfileViewModel
+            {
+                Profile = profile,
+                Courses = courses,
+                CanEdit = canEdit
+            };
+
+            return View(model);
         }
 
         [Authorize]
