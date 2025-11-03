@@ -1,11 +1,12 @@
 Vagrant.configure("2") do |config|
-
+  
   # Ubuntu VM
   config.vm.define "ubuntu" do |ubuntu|
     ubuntu.vm.box = "ubuntu/jammy64"
     ubuntu.vm.hostname = "ubuntu-courses"
     
     ubuntu.vm.network "forwarded_port", guest: 5000, host: 5000
+    ubuntu.vm.network "forwarded_port", guest: 5001, host: 5001
     
     ubuntu.vm.provider "virtualbox" do |vb|
       vb.name = "Ubuntu-Courses-Platform"
@@ -53,12 +54,89 @@ Vagrant.configure("2") do |config|
       
       echo "SQL Server installed!"
 
+      echo "================================"
+      echo "Setting up AuthServer project..."
+      echo "================================"
+      
+      cd /home/vagrant
+      git clone https://github.com/laylin41/AuthServerCourses-Platform.git authserver
+      chown -R vagrant:vagrant authserver
+      
+      su - vagrant -c "dotnet tool install --global dotnet-ef"
+      echo 'export PATH="$PATH:/home/vagrant/.dotnet/tools"' >> /home/vagrant/.bashrc
+      export PATH="$PATH:/home/vagrant/.dotnet/tools"
+      
+      su - vagrant -c "cd /home/vagrant/authserver && dotnet restore"
+      
+      cat > /home/vagrant/authserver/appsettings.Production.json <<'EOF'
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=AuthServerCoursesPlatformDB;User Id=sa;Password=MyP@ssw0rd!2025;TrustServerCertificate=True;"
+  },
+  "Cloudinary": {
+    "CloudName": "dxtnc9hfj",
+    "ApiKey": "978155354124382",
+    "ApiSecret": "xGSQr0JeoUZ0B3SUAIovaUiIHgw"
+  }
+}
+EOF
+      
+      su - vagrant -c "cd /home/vagrant/authserver && \
+          ASPNETCORE_ENVIRONMENT=Production \
+          dotnet-ef database update"
+      
+      su - vagrant -c "cd /home/vagrant/authserver && dotnet build"
+      
+      cat > /etc/systemd/system/authserver.service <<'EOF'
+[Unit]
+Description=AuthServer Application
+After=network.target mssql-server.service
+
+[Service]
+Type=simple
+User=vagrant
+WorkingDirectory=/home/vagrant/authserver
+ExecStart=/usr/bin/dotnet run --project /home/vagrant/authserver --urls "http://0.0.0.0:5000" --environment Production
+Restart=always
+RestartSec=10
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment="DOTNET_ENVIRONMENT=Production"
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=authserver
+
+[Install]
+WantedBy=multi-user.target
+EOF
+      
+      systemctl daemon-reload
+      systemctl enable authserver
+      systemctl start authserver
+      
+      echo "================================"
+      echo "AuthServer project installed on Ubuntu!"
+      echo "Running on port 5000"
+      echo "================================"
+      
+      sleep 5
+
+      echo "================================"
+      echo "Setting up Courses Platform project..."
+      echo "================================"
+
       cd /home/vagrant
       git clone https://github.com/dmitropariy/courses-platform.git app
       chown -R vagrant:vagrant app
       
       cd app
-      git checkout vagrant
+      git checkout feature/auth
 
       cat > /home/vagrant/app/appsettings.Production.json <<'EOF'
 {
@@ -70,16 +148,15 @@ Vagrant.configure("2") do |config|
       "Default": "Information",
       "Microsoft.AspNetCore": "Warning"
     }
+  },
+  "Cloudinary": {
+    "CloudName": "dxtnc9hfj",
+    "ApiKey": "978155354124382",
+    "ApiSecret": "xGSQr0JeoUZ0B3SUAIovaUiIHgw"
   }
 }
 EOF
       
-      su - vagrant -c "dotnet tool install --global dotnet-ef"
-
-      echo 'export PATH="$PATH:/home/vagrant/.dotnet/tools"' >> /home/vagrant/.bashrc
-      
-      export PATH="$PATH:/home/vagrant/.dotnet/tools"
-
       su - vagrant -c "cd /home/vagrant/app && dotnet restore"
       
       su - vagrant -c "cd /home/vagrant/app && \
@@ -91,13 +168,13 @@ EOF
       cat > /etc/systemd/system/dotnetapp.service <<'EOF'
 [Unit]
 Description=.NET Application
-After=network.target
+After=network.target authserver.service
 
 [Service]
 Type=simple
 User=vagrant
 WorkingDirectory=/home/vagrant/app
-ExecStart=/usr/bin/dotnet run --project /home/vagrant/app/courses-platform.csproj --urls "http://0.0.0.0:5000" --environment Production
+ExecStart=/usr/bin/dotnet run --project /home/vagrant/app/courses-platform.csproj --urls "http://0.0.0.0:5001" --environment Production
 Restart=always
 RestartSec=10
 Environment=ASPNETCORE_ENVIRONMENT=Production
@@ -115,10 +192,15 @@ EOF
       systemctl start dotnetapp
       
       echo "================================"
-      echo ".NET project installed on Ubuntu!"
+      echo "Ubuntu setup complete!"
       echo "================================"
-      echo "Check status: sudo systemctl status dotnetapp"
-      echo "Logs: sudo journalctl -u dotnetapp -f"
+      echo "AuthServer running on port 5000"
+      echo "  Check status: sudo systemctl status authserver"
+      echo "  Logs: sudo journalctl -u authserver -f"
+      echo ""
+      echo "Courses Platform running on port 5001"
+      echo "  Check status: sudo systemctl status dotnetapp"
+      echo "  Logs: sudo journalctl -u dotnetapp -f"
       echo "================================"
     SHELL
   end
@@ -128,7 +210,8 @@ EOF
     centos.vm.box = "centos/stream9"
     centos.vm.hostname = "centos-courses"
     
-    centos.vm.network "forwarded_port", guest: 5000, host: 5001
+    centos.vm.network "forwarded_port", guest: 5000, host: 5002
+    centos.vm.network "forwarded_port", guest: 5001, host: 5003
     
     centos.vm.provider "virtualbox" do |vb|
       vb.name = "CentOS-Courses-Platform"
@@ -144,7 +227,7 @@ EOF
       
       echo "Installing SELinux tools..."
       dnf install -y policycoreutils-python-utils
-
+      
       echo "Installing .NET SDK 8.0..."
       dnf install -y dotnet-sdk-8.0
       
@@ -173,12 +256,89 @@ EOF
       
       echo "SQL Server installed!"
       
+      echo "================================"
+      echo "Setting up AuthServer project..."
+      echo "================================"
+      
+      cd /home/vagrant
+      git clone https://github.com/laylin41/AuthServerCourses-Platform.git authserver
+      chown -R vagrant:vagrant authserver
+      
+      su - vagrant -c "dotnet tool install --global dotnet-ef"
+      echo 'export PATH="$PATH:/home/vagrant/.dotnet/tools"' >> /home/vagrant/.bashrc
+      export PATH="$PATH:/home/vagrant/.dotnet/tools"
+      
+      su - vagrant -c "cd /home/vagrant/authserver && dotnet restore"
+      
+      cat > /home/vagrant/authserver/appsettings.Production.json <<'EOF'
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=AuthServerCoursesPlatformDB;User Id=sa;Password=MyP@ssw0rd!2025;TrustServerCertificate=True;"
+  },
+  "Cloudinary": {
+    "CloudName": "dxtnc9hfj",
+    "ApiKey": "978155354124382",
+    "ApiSecret": "xGSQr0JeoUZ0B3SUAIovaUiIHgw"
+  }
+}
+EOF
+      
+      su - vagrant -c "cd /home/vagrant/authserver && \
+          ASPNETCORE_ENVIRONMENT=Production \
+          dotnet-ef database update"
+      
+      su - vagrant -c "cd /home/vagrant/authserver && dotnet build"
+      
+      cat > /etc/systemd/system/authserver.service <<'EOF'
+[Unit]
+Description=AuthServer Application
+After=network.target mssql-server.service
+
+[Service]
+Type=simple
+User=vagrant
+WorkingDirectory=/home/vagrant/authserver
+ExecStart=/usr/bin/dotnet run --project /home/vagrant/authserver --urls "http://0.0.0.0:5000" --environment Production
+Restart=always
+RestartSec=10
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment="DOTNET_ENVIRONMENT=Production"
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=authserver
+
+[Install]
+WantedBy=multi-user.target
+EOF
+      
+      systemctl daemon-reload
+      systemctl enable authserver
+      systemctl start authserver
+      
+      echo "================================"
+      echo "AuthServer project installed on CentOS!"
+      echo "Running on port 5000"
+      echo "================================"
+      
+      sleep 5
+      
+      echo "================================"
+      echo "Setting up Courses Platform project..."
+      echo "================================"
+      
       cd /home/vagrant
       git clone https://github.com/dmitropariy/courses-platform.git app
       chown -R vagrant:vagrant app
       
       cd app
-      git checkout vagrant
+      git checkout feature/auth
       
       cat > /home/vagrant/app/appsettings.Production.json <<'EOF'
 {
@@ -190,15 +350,14 @@ EOF
       "Default": "Information",
       "Microsoft.AspNetCore": "Warning"
     }
+  },
+  "Cloudinary": {
+    "CloudName": "dxtnc9hfj",
+    "ApiKey": "978155354124382",
+    "ApiSecret": "xGSQr0JeoUZ0B3SUAIovaUiIHgw"
   }
 }
 EOF
-      
-      su - vagrant -c "dotnet tool install --global dotnet-ef"
-      
-      echo 'export PATH="$PATH:/home/vagrant/.dotnet/tools"' >> /home/vagrant/.bashrc
-      
-      export PATH="$PATH:/home/vagrant/.dotnet/tools"
       
       su - vagrant -c "cd /home/vagrant/app && dotnet restore"
       
@@ -211,13 +370,13 @@ EOF
       cat > /etc/systemd/system/dotnetapp.service <<'EOF'
 [Unit]
 Description=.NET Application
-After=network.target
+After=network.target authserver.service
 
 [Service]
 Type=simple
 User=vagrant
 WorkingDirectory=/home/vagrant/app
-ExecStart=/usr/bin/dotnet run --project /home/vagrant/app/courses-platform.csproj --urls "http://0.0.0.0:5000" --environment Production
+ExecStart=/usr/bin/dotnet run --project /home/vagrant/app/courses-platform.csproj --urls "http://0.0.0.0:5001" --environment Production
 Restart=always
 RestartSec=10
 Environment=ASPNETCORE_ENVIRONMENT=Production
@@ -235,10 +394,15 @@ EOF
       systemctl start dotnetapp
       
       echo "================================"
-      echo ".NET project installed on CentOS!"
+      echo "CentOS setup complete!"
       echo "================================"
-      echo "Check status: sudo systemctl status dotnetapp"
-      echo "Logs: sudo journalctl -u dotnetapp -f"
+      echo "AuthServer running on port 5000"
+      echo "  Check status: sudo systemctl status authserver"
+      echo "  Logs: sudo journalctl -u authserver -f"
+      echo ""
+      echo "Courses Platform running on port 5001"
+      echo "  Check status: sudo systemctl status dotnetapp"
+      echo "  Logs: sudo journalctl -u dotnetapp -f"
       echo "================================"
     SHELL
   end
