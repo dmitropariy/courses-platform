@@ -3,6 +3,7 @@ using courses_platform.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -124,7 +125,9 @@ builder.Services.AddAuthentication(options =>
 
 });
 
-
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("./keys"))
+    .SetApplicationName("CoursesPlatformClient");
 
 var app = builder.Build();
 
