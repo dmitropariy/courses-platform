@@ -136,7 +136,7 @@ EOF
       chown -R vagrant:vagrant app
       
       cd app
-      git checkout feature/auth
+      git checkout vagrant-auth
       mkdir keys
       dotnet dev-certs https -ep ./keys/identity.pfx -p "StrongP@ssw0rd!"
 
@@ -340,7 +340,7 @@ EOF
       chown -R vagrant:vagrant app
       
       cd app
-      git checkout feature/auth
+      git checkout vagrant-auth
       mkdir keys
       dotnet dev-certs https -ep ./keys/identity.pfx -p "StrongP@ssw0rd!"
       
