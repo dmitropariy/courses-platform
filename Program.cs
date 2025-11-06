@@ -131,8 +131,9 @@ builder.Services.AddDataProtection()
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    var certPath = Path.Combine(AppContext.BaseDirectory, "certs", "localhost+2.pem");
-    var keyPath = Path.Combine(AppContext.BaseDirectory, "certs", "localhost+2-key.pem");
+    var basePath = builder.Environment.ContentRootPath;
+    var certPath = Path.Combine(basePath, "certs", "localhost+2.pem");
+    var keyPath = Path.Combine(basePath, "certs", "localhost+2-key.pem");
 
     if (File.Exists(certPath) && File.Exists(keyPath))
     {
