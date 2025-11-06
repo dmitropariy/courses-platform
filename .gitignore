@@ -8,6 +8,9 @@
 keys/
 !keys/.gitkeep
 
+certs/
+!certs/.gitkeep
+
 # User-specific files
 *.suo
 *.user

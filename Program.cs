@@ -129,6 +129,27 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo("./keys"))
     .SetApplicationName("CoursesPlatformClient");
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    var certPath = Path.Combine(AppContext.BaseDirectory, "certs", "localhost+2.pem");
+    var keyPath = Path.Combine(AppContext.BaseDirectory, "certs", "localhost+2-key.pem");
+
+    if (File.Exists(certPath) && File.Exists(keyPath))
+    {
+        options.ListenLocalhost(5001, listenOptions =>
+        {
+            listenOptions.UseHttps(certPath, keyPath);
+        });
+    }
+    else
+    {
+        options.ListenLocalhost(5001, listenOptions =>
+        {
+            listenOptions.UseHttps();
+        });
+    }
+});
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
