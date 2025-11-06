@@ -140,13 +140,11 @@ builder.WebHost.ConfigureKestrel(options =>
         {
             listenOptions.UseHttps(certPath, keyPath);
         });
+        Console.WriteLine($"[Kestrel] HTTPS: using mkcert ({certPath})");
     }
     else
     {
-        options.ListenLocalhost(5001, listenOptions =>
-        {
-            listenOptions.UseHttps();
-        });
+        throw new FileNotFoundException($"Certificate not found: {certPath}");
     }
 });
 
