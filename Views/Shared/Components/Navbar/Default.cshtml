@@ -39,6 +39,12 @@
                             </a>
                         </li>
                     }
+                    else if (Model.Role == "Admin")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Admin" asp-action="Index">Адмінська панель</a>
+                        </li>
+                    }
                 }
             </ul>
 
