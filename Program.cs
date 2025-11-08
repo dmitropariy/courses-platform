@@ -1,4 +1,5 @@
-﻿using courses_platform.Contexts;
+﻿using courses_platform;
+using courses_platform.Contexts;
 using courses_platform.Models;
 using courses_platform.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -198,6 +200,12 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    SeedData.Initialize(db);
+}
 
 app.Run();
 

@@ -9,6 +9,7 @@ using courses_platform.Models;
 using Microsoft.EntityFrameworkCore;
 using CloudinaryDotNet;
 using static courses_platform.Services.UserApiService;
+using courses_platform.Models.ViewModels;
 
 namespace courses_platform.Controllers
 {

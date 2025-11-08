@@ -1,4 +1,4 @@
-﻿namespace courses_platform.Models
+﻿namespace courses_platform.Models.ViewModels
 {
     public class ProfessorProfileViewModel
     {

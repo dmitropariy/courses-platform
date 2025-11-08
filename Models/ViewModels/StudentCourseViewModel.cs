@@ -1,10 +1,12 @@
-﻿namespace courses_platform.Models
+﻿namespace courses_platform.Models.ViewModels
 {
-    public class ProfessorCourseViewModel
+    public class StudentCourseViewModel
     {
         public int CourseId { get; set; }
         public string Title { get; set; } = null!;
         public string Description { get; set; } = null!;
         public int CompletedCount { get; set; }
+        public bool IsCompleted { get; set; }
+        public DateTime? CompletedTime { get; set; }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Text.Json;
-using courses_platform.Models;
+using courses_platform.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 
 namespace courses_platform.Services
