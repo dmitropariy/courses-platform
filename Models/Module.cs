@@ -11,14 +11,16 @@ namespace courses_platform.Models
         [ForeignKey("Course")]
         public int CourseId { get; set; }
 
-        public string Title { get; set; }
+        [Required, MaxLength(255)]
+        public string Title { get; set; } = null!;
 
-        public string ModuleDescription { get; set; }
+        [MaxLength(4000)]
+        public string? ModuleDescription { get; set; }
 
         public int OrderNumber { get; set; }
 
 
-        public Course Course { get; set; }
+        public Course Course { get; set; } = null!;
         public ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
         public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
     } 

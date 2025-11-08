@@ -11,6 +11,10 @@ namespace courses_platform.Models
         {
         }
 
+        public ApplicationDbContext(DbContextOptions options) : base(options)
+        {
+        }
+
         public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Module> Modules { get; set; }
@@ -27,6 +31,20 @@ namespace courses_platform.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // prevent EF Core from creating nvarchar(max) for string properties by default. SQlite compatibility
+            foreach (var entity in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var prop in entity.GetProperties()
+                         .Where(p => p.ClrType == typeof(string) && !p.IsKey()))
+                {
+                    if (!prop.GetMaxLength().HasValue)
+                    {
+                        // Default safe length for any missed string
+                        prop.SetMaxLength(255);
+                    }
+                }
+            }
 
             // === Визначення зв’язків ===
 

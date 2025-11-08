@@ -12,6 +12,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Migrations\InMemory\**" />
+    <Content Remove="Migrations\InMemory\**" />
+    <EmbeddedResource Remove="Migrations\InMemory\**" />
+    <None Remove="Migrations\InMemory\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CloudinaryDotNet" Version="1.27.8" />
     <PackageReference Include="FluentAssertions" Version="8.8.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
@@ -32,6 +39,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Migrations\SQLite\" />
+    <Folder Include="Migrations\PostgreSQL\" />
+    <Folder Include="Migrations\SqlServer\" />
   </ItemGroup>
 
 </Project>

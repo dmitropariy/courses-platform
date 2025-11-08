@@ -12,15 +12,17 @@ namespace courses_platform.Models
         [ForeignKey("Lesson")]
         public int LessonId { get; set; }
 
-        public string BlockType { get; set; } // Наприклад: "text", "image", "video"
+        [Required, MaxLength(50)]
+        public string BlockType { get; set; } = null!;     // text, image, video
 
-        public string? Content { get; set; } // text block
-        
-        public string? MediaUrl { get; set; } // image or video URL
-        
+        [MaxLength(4000)]
+        public string? Content { get; set; }              // text block
+
+        [MaxLength(1000)]
+        public string? MediaUrl { get; set; }             // image / video URL
+
         public int Order { get; set; }
 
-
-        public Lesson Lesson { get; set; }
+        public Lesson Lesson { get; set; } = null!;
     }
 }

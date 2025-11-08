@@ -1,4 +1,5 @@
-﻿using courses_platform.Models;
+﻿using courses_platform.Contexts;
+using courses_platform.Models;
 using courses_platform.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -7,10 +8,39 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+var provider = builder.Configuration.GetValue<string>("DatabaseProvider")?.ToLower();
+
+var sqlServerConn = builder.Configuration.GetConnectionString("SqlServerConnection");
+var postgreConn = builder.Configuration.GetConnectionString("PostgreSQLConnection");
+var sqliteConn = builder.Configuration.GetConnectionString("SQLiteConnection");
+
+switch (provider)
+{
+    case "postgres":
+    case "postgresql":
+        builder.Services.AddDbContext<ApplicationDbContext, ApplicationDbContextPostgreSQL>(options =>
+            options.UseNpgsql(postgreConn));
+        break;
+
+    case "sqlite":
+        builder.Services.AddDbContext<ApplicationDbContext, ApplicationDbContextSqlite>(options =>
+            options.UseSqlite(sqliteConn));
+        break;
+
+    case "inmemory":
+        builder.Services.AddDbContext<ApplicationDbContext, ApplicationDbContextInMemory>(options =>
+            options.UseInMemoryDatabase("CoursesPlatform_InMemory"));
+        break;
+
+    case "sqlserver":
+    default:
+        builder.Services.AddDbContext<ApplicationDbContext, ApplicationDbContextSqlServer>(options =>
+            options.UseSqlServer(sqlServerConn));
+        break;
+}
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<CloudinaryService>();
@@ -45,7 +75,7 @@ builder.Services.AddAuthentication(options =>
     options.ClaimActions.MapJsonKey("name", "name");
 
     options.SignedOutCallbackPath = "/signout-callback-oidc";
-    options.SignedOutRedirectUri = "https://localhost:5001/"; 
+    options.SignedOutRedirectUri = "https://localhost:5001/";
 
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -59,7 +89,7 @@ builder.Services.AddAuthentication(options =>
         {
             var db = ctx.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
             var sub = ctx.Principal.FindFirst("sub")?.Value ??
-                      ctx.Principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                        ctx.Principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
 
             if (!string.IsNullOrEmpty(sub))
             {
@@ -77,7 +107,7 @@ builder.Services.AddAuthentication(options =>
             var db = ctx.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
 
             var sub = ctx.Principal.FindFirst("sub")?.Value ??
-                      ctx.Principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                        ctx.Principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
 
             if (string.IsNullOrEmpty(sub))
                 return;
@@ -125,29 +155,29 @@ builder.Services.AddAuthentication(options =>
 
 });
 
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo("./keys"))
-    .SetApplicationName("CoursesPlatformClient");
+//builder.Services.AddDataProtection()
+//    .PersistKeysToFileSystem(new DirectoryInfo("./keys"))
+//    .SetApplicationName("CoursesPlatformClient");
 
-builder.WebHost.ConfigureKestrel(options =>
-{
-    var basePath = builder.Environment.ContentRootPath;
-    var certPath = Path.Combine(basePath, "certs", "localhost+2.pem");
-    var keyPath = Path.Combine(basePath, "certs", "localhost+2-key.pem");
+//builder.WebHost.ConfigureKestrel(options =>
+//{
+//    var basePath = builder.Environment.ContentRootPath;
+//    var certPath = Path.Combine(basePath, "certs", "localhost+2.pem");
+//    var keyPath = Path.Combine(basePath, "certs", "localhost+2-key.pem");
 
-    if (File.Exists(certPath) && File.Exists(keyPath))
-    {
-        options.ListenLocalhost(5001, listenOptions =>
-        {
-            listenOptions.UseHttps(certPath, keyPath);
-        });
-        Console.WriteLine($"[Kestrel] HTTPS: using mkcert ({certPath})");
-    }
-    else
-    {
-        throw new FileNotFoundException($"Certificate not found: {certPath}");
-    }
-});
+//    if (File.Exists(certPath) && File.Exists(keyPath))
+//    {
+//        options.ListenLocalhost(5001, listenOptions =>
+//        {
+//            listenOptions.UseHttps(certPath, keyPath);
+//        });
+//        Console.WriteLine($"[Kestrel] HTTPS: using mkcert ({certPath})");
+//    }
+//    else
+//    {
+//        throw new FileNotFoundException($"Certificate not found: {certPath}");
+//    }
+//});
 
 var app = builder.Build();
 
