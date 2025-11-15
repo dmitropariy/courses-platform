@@ -125,29 +125,29 @@ builder.Services.AddAuthentication(options =>
 
 });
 
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo("./keys"))
-    .SetApplicationName("CoursesPlatformClient");
+//builder.Services.AddDataProtection()
+//    .PersistKeysToFileSystem(new DirectoryInfo("./keys"))
+//    .SetApplicationName("CoursesPlatformClient");
 
-builder.WebHost.ConfigureKestrel(options =>
-{
-    var basePath = builder.Environment.ContentRootPath;
-    var certPath = Path.Combine(basePath, "certs", "localhost+2.pem");
-    var keyPath = Path.Combine(basePath, "certs", "localhost+2-key.pem");
+//builder.WebHost.ConfigureKestrel(options =>
+//{
+//    var basePath = builder.Environment.ContentRootPath;
+//    var certPath = Path.Combine(basePath, "certs", "localhost+2.pem");
+//    var keyPath = Path.Combine(basePath, "certs", "localhost+2-key.pem");
 
-    if (File.Exists(certPath) && File.Exists(keyPath))
-    {
-        options.ListenLocalhost(5001, listenOptions =>
-        {
-            listenOptions.UseHttps(certPath, keyPath);
-        });
-        Console.WriteLine($"[Kestrel] HTTPS: using mkcert ({certPath})");
-    }
-    else
-    {
-        throw new FileNotFoundException($"Certificate not found: {certPath}");
-    }
-});
+//    if (File.Exists(certPath) && File.Exists(keyPath))
+//    {
+//        options.ListenLocalhost(5001, listenOptions =>
+//        {
+//            listenOptions.UseHttps(certPath, keyPath);
+//        });
+//        Console.WriteLine($"[Kestrel] HTTPS: using mkcert ({certPath})");
+//    }
+//    else
+//    {
+//        throw new FileNotFoundException($"Certificate not found: {certPath}");
+//    }
+//});
 
 var app = builder.Build();
 

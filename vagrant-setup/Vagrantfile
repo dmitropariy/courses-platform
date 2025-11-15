@@ -54,6 +54,11 @@ Vagrant.configure("2") do |config|
       
       echo "SQL Server installed!"
 
+      dotnet dev-certs https --clean
+      dotnet dev-certs https --trust
+
+      echo "Certificates installed!"
+
       echo "================================"
       echo "Setting up AuthServer project..."
       echo "================================"
@@ -62,14 +67,14 @@ Vagrant.configure("2") do |config|
       git clone https://github.com/laylin41/AuthServerCourses-Platform.git authserver
       chown -R vagrant:vagrant authserver
       
-      curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
-      chmod +x mkcert-v*-linux-amd64
-      mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+      # curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+      # chmod +x mkcert-v*-linux-amd64
+      # mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
 
-      mkcert -install
-      mkcert localhost 127.0.0.1 ::1
-      mkdir authserver/certs
-      cp localhost+2*.pem authserver/certs/
+      # mkcert -install
+      # mkcert localhost 127.0.0.1 ::1
+      # mkdir authserver/certs
+      # cp localhost+2*.pem authserver/certs/
 
       # su - vagrant -c "cd /home/vagrant/authserver &&
       # mkdir keys &&
@@ -116,7 +121,7 @@ After=network.target mssql-server.service
 Type=simple
 User=vagrant
 WorkingDirectory=/home/vagrant/authserver
-ExecStart=/usr/bin/dotnet run --project /home/vagrant/authserver --urls "https://0.0.0.0:5000" --environment Production
+ExecStart=/usr/bin/dotnet run --project /home/vagrant/authserver --environment Production -lp https
 Restart=always
 RestartSec=10
 Environment=ASPNETCORE_ENVIRONMENT=Production
@@ -148,8 +153,8 @@ EOF
       cd /home/vagrant
       git clone https://github.com/dmitropariy/courses-platform.git app
       chown -R vagrant:vagrant app
-      mkdir app/certs
-      cp localhost+2*.pem app/certs/
+      # mkdir app/certs
+      # cp localhost+2*.pem app/certs/
 
       cd app
       git checkout vagrant-auth
@@ -190,7 +195,7 @@ After=network.target authserver.service
 Type=simple
 User=vagrant
 WorkingDirectory=/home/vagrant/app
-ExecStart=/usr/bin/dotnet run --project /home/vagrant/app/courses-platform.csproj --urls "https://0.0.0.0:5001" --environment Production
+ExecStart=/usr/bin/dotnet run --project /home/vagrant/app/courses-platform.csproj --environment Production -lp https
 Restart=always
 RestartSec=10
 Environment=ASPNETCORE_ENVIRONMENT=Production
