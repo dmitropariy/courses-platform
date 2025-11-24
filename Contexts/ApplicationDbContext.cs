@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using courses_platform.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 
-namespace courses_platform.Models
+namespace courses_platform.Contexts
 {
     public class ApplicationDbContext : DbContext
     {

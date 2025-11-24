@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using courses_platform.Models;
 using System;
 using Microsoft.AspNetCore.Authorization;
+using courses_platform.Contexts;
 
 public class CourseVerificationController : Controller
 {

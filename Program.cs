@@ -6,10 +6,15 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System;
-
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.Extensions.Options;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using CloudinaryDotNet;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +49,6 @@ switch (provider)
         break;
 }
 
-builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<CloudinaryService>();
 
 builder.Services.AddHttpContextAccessor();
@@ -127,7 +131,6 @@ builder.Services.AddAuthentication(options =>
 
             if (!string.IsNullOrEmpty(roleClaim))
             {
-                // підставляємо id користувача в URL
                 switch (roleClaim)
                 {
                     case "Student":
@@ -156,30 +159,27 @@ builder.Services.AddAuthentication(options =>
 
 
 });
+// Add versioning
+builder.Services.AddApiVersioning(opt =>
+{
+    opt.DefaultApiVersion = new ApiVersion(2, 0);
+    opt.AssumeDefaultVersionWhenUnspecified = true;
+    opt.ReportApiVersions = true; // Adds headers like api-supported-versions
+    opt.ApiVersionReader = new UrlSegmentApiVersionReader(); // /v{version}/controller
+});
 
-//builder.Services.AddDataProtection()
-//    .PersistKeysToFileSystem(new DirectoryInfo("./keys"))
-//    .SetApplicationName("CoursesPlatformClient");
+// Add versioned API explorer for Swagger
+builder.Services.AddVersionedApiExplorer(opt =>
+{
+    opt.GroupNameFormat = "'v'VVV"; // e.g., v1, v2
+    opt.SubstituteApiVersionInUrl = true;
+});
 
-//builder.WebHost.ConfigureKestrel(options =>
-//{
-//    var basePath = builder.Environment.ContentRootPath;
-//    var certPath = Path.Combine(basePath, "certs", "localhost+2.pem");
-//    var keyPath = Path.Combine(basePath, "certs", "localhost+2-key.pem");
+// Add Swagger and bind it to the versioned explorer
+builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
+builder.Services.AddSwaggerGen();
 
-//    if (File.Exists(certPath) && File.Exists(keyPath))
-//    {
-//        options.ListenLocalhost(5001, listenOptions =>
-//        {
-//            listenOptions.UseHttps(certPath, keyPath);
-//        });
-//        Console.WriteLine($"[Kestrel] HTTPS: using mkcert ({certPath})");
-//    }
-//    else
-//    {
-//        throw new FileNotFoundException($"Certificate not found: {certPath}");
-//    }
-//});
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
@@ -189,10 +189,27 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Swagger UI with support for multiple versions
+var apiVersionDescriptionProvider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+foreach (var desc in apiVersionDescriptionProvider.ApiVersionDescriptions)
+{
+    Console.WriteLine(desc.GroupName); // should print v1, v2
+}
+
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    foreach (var desc in apiVersionDescriptionProvider.ApiVersionDescriptions)
+    {
+        options.SwaggerEndpoint($"/swagger/{desc.GroupName}/swagger.json", desc.GroupName.ToUpperInvariant());
+    }
+});
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.MapControllers();
 
 app.UseAuthentication();
 app.UseAuthorization();

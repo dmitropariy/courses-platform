@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using courses_platform.Services;
 using System.Security.Claims;
-using courses_platform.Models;
 using Microsoft.EntityFrameworkCore;
 using CloudinaryDotNet;
 using static courses_platform.Services.UserApiService;
 using courses_platform.Models.ViewModels;
+using courses_platform.Contexts;
 
 namespace courses_platform.Controllers
 {

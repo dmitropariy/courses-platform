@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using courses_platform.Models;
 using Microsoft.AspNetCore.Authorization;
+using courses_platform.Contexts;
 
 namespace courses_platform.Controllers
 {
@@ -15,8 +15,6 @@ namespace courses_platform.Controllers
             _context = context;
         }
 
-        // ЛАБ 3: Додати пошук за автором курсу
-        // GET: Список всіх курсів
         [HttpGet]
         [Authorize(Roles = "Student, Professor")]
         public IActionResult Index(string search, int page = 1)
@@ -45,6 +43,16 @@ namespace courses_platform.Controllers
             ViewBag.Search = search;
 
             return View(courses);
+        }
+
+        public IActionResult OldCourses()
+        { 
+            return View();
+        }
+
+        public IActionResult NewCourses()
+        {
+            return View();
         }
     }
 }

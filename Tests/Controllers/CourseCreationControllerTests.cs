@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Moq;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using courses_platform.Contexts;
 
 namespace courses_platform.Tests.Controllers
 {

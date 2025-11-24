@@ -1,6 +1,5 @@
 ﻿// Contexts/ApplicationDbContextSqlServer.cs
 using Microsoft.EntityFrameworkCore;
-using courses_platform.Models;
 
 namespace courses_platform.Contexts
 {

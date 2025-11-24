@@ -1,4 +1,5 @@
-﻿using courses_platform.Models;
+﻿using courses_platform.Contexts;
+using courses_platform.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;

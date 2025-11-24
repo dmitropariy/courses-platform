@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using courses_platform.Models;
 using System;
+using courses_platform.Contexts;
 
 namespace courses_platform
 {
@@ -114,7 +115,7 @@ namespace courses_platform
             context.Assignments.AddRange(assignments);
             context.SaveChanges();
 
-            // === 5. AssignmentOptions (for quiz_single/multiple) ===
+            // === 5. AssignmentOptions  ===
             foreach (var assignment in assignments.Where(a => a.Type.Contains("quiz")))
             {
                 var options = assignment.Type == "quiz_single"
@@ -127,7 +128,7 @@ namespace courses_platform
                     {
                         Assignment = assignment,
                         Text = options[i],
-                        IsCorrect = i == 0 // first is correct
+                        IsCorrect = i == 0 
                     });
                 }
             }
@@ -142,7 +143,7 @@ namespace courses_platform
             var answers = new string[]{ "answer", "annaISwear", "annaAmmaCriminal", "manna", "bruh" };
 
             int submissionId = 1;
-            foreach (var assignment in assignments.Take(15)) // 30 submissions
+            foreach (var assignment in assignments.Take(15)) 
             {
                 for (int i = 0; i < 2; i++)
                 {
@@ -179,7 +180,7 @@ namespace courses_platform
 
                     context.CourseVerifications.Add(new CourseVerification
                     {
-                        CourseId = course.CourseId, // Явно вказуємо FK
+                        CourseId = course.CourseId, 
                         Status = status,
                         ReviewComment = comment,
                         VerifiedAt = status != "pending"

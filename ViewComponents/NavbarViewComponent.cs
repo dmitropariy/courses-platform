@@ -1,4 +1,4 @@
-﻿using courses_platform.Models;
+﻿using courses_platform.Contexts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;

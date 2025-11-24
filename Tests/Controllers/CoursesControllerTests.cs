@@ -3,6 +3,7 @@ using courses_platform.Controllers;
 using courses_platform.Models;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
+using courses_platform.Contexts;
 
 namespace courses_platform.Tests.Controllers
 {

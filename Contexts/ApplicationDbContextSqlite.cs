@@ -1,5 +1,5 @@
 ﻿// Contexts/ApplicationDbContextSqlite.cs
-using courses_platform.Models;
+using courses_platform.Contexts;
 using Microsoft.EntityFrameworkCore;
 
 public class ApplicationDbContextSqlite : ApplicationDbContext

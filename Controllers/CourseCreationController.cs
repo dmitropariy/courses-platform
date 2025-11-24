@@ -3,6 +3,7 @@ using courses_platform.Models;
 using Microsoft.EntityFrameworkCore;
 using courses_platform.Services;
 using Microsoft.AspNetCore.Authorization;
+using courses_platform.Contexts;
 
 namespace courses_platform.Controllers
 {
