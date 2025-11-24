@@ -1,0 +1,44 @@
+﻿@model courses_platform.Models.Module
+
+@{
+    ViewData["Title"] = "Тестове завдання модуля";
+}
+
+<!-- Сторінка ассаймента:
+    Куча завдань, вивести їх. Не клікабельні.
+    Одразу показувати правильні відповіді. Для тестових завдань - вибір кнопки, Для текстових - що ввести правильне.
+
+    Кнопка повернутись назад
+
+-->
+
+<h2>Тестове завдання модуля: @Model.Title</h2>
+
+<hr />
+
+@foreach (var assignment in Model.Assignments.OrderBy(a => a.AssignmentId))
+{
+    <div class="assignment-block mb-3 p-2 border rounded">
+        <p><strong>Питання:</strong> @assignment.QuestionText</p>
+        <p><strong>Тип:</strong> @(assignment.Type == "open_text" ? "Відкрита відповідь" : (assignment.Type == "quiz_single" ? "Одна правильна відповідь" : "Кілька правильних відповідей"))</p>
+
+        @if (assignment.Type == "open_text")
+        {
+            <p><strong>Правильна відповідь:</strong> @assignment.Options.FirstOrDefault()?.Text</p>
+        }
+        else
+        {
+            <ul>
+                @foreach (var opt in assignment.Options)
+                {
+                    <li>
+                        <input type="checkbox" disabled @(opt.IsCorrect ? "checked" : "") /> @opt.Text
+                    </li>
+                }
+            </ul>
+
+        }
+    </div>
+}
+
+<a href="javascript:history.back()" class="btn btn-outline-secondary">Повернутись назад</a>

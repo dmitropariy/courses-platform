@@ -1,0 +1,167 @@
+﻿@model courses_platform.Models.Module
+
+@{
+    ViewData["Title"] = "Тестове завдання модуля";
+}
+
+<h2>Тестове завдання для модуля "@Model.Title"</h2>
+<hr />
+
+<h4>Додати питання</h4>
+
+<form asp-action="AddAssignment" method="post" id="addAssignmentForm">
+    <input type="hidden" name="moduleId" value="@Model.ModuleId" />
+
+    <label>Назва питання</label>
+    <input type="text" name="title" class="form-control" required />
+
+    <label>Тип питання</label>
+    <select name="type" id="assignmentType" class="form-control mt-1">
+        <option value="quiz_single">Одна правильна відповідь</option>
+        <option value="quiz_multiple">Кілька правильних</option>
+        <option value="open_text">Відкрита відповідь</option>
+    </select>
+
+    <label class="mt-2">Текст питання</label>
+    <textarea name="questionText" class="form-control" rows="3" required></textarea>
+
+    <div id="optionsSection" class="mt-3">
+        <h5>Варіанти відповідей</h5>
+        <div id="optionsList">
+            <div class="option-item mb-2">
+                <input type="text" name="optionTexts[0]" class="form-control mb-1" placeholder="Варіант відповіді" />
+                <input type="checkbox" class="optionCorrectCheckbox" name="optionCorrect[0]" value="true" /> Правильна
+            </div>
+        </div>
+        <button type="button" id="addOptionBtn" class="btn btn-outline-primary mt-2 btn-sm">+ Додати варіант</button>
+    </div>
+
+    <div id="openTextSection" style="display:none" class="mt-3">
+        <label>Правильна відповідь</label>
+        <textarea name="openTextAnswer" class="form-control" rows="2"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-success mt-3">Додати питання</button>
+</form>
+
+<hr />
+
+<h4>Усі питання модуля:</h4>
+
+@if (Model.Assignments.Any())
+{
+    <ul class="list-group mt-3">
+        @foreach (var q in Model.Assignments)
+        {
+            <li class="list-group-item">
+                <b>@q.Title</b> — <i>@q.Type</i><br />
+                <p>@q.QuestionText</p>
+
+                @if (q.Options != null && q.Options.Any())
+                {
+                    <ul>
+                        @foreach (var opt in q.Options)
+                        {
+                            <li>
+                                @opt.Text
+                                @if (opt.IsCorrect)
+                                {
+                                    <span style="color:green; font-weight:bold; margin-left:8px;">✔</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+                else if (q.Type == "open_text")
+                {
+                    <p><b>Правильна відповідь:</b> @q.Options.FirstOrDefault()?.Text</p>
+                }
+
+                <form asp-action="EditAssignment" method="get" class="d-inline">
+                    <input type="hidden" name="assignmentId" value="@q.AssignmentId" />
+                    <button type="submit" class="btn btn-secondary btn-sm">Редагувати</button>
+                </form>
+
+                <form asp-action="DeleteAssignment" method="post" class="d-inline">
+                    <input type="hidden" name="assignmentId" value="@q.AssignmentId" />
+                    <input type="hidden" name="moduleId" value="@Model.ModuleId" />
+                    <button type="submit" class="btn btn-danger btn-sm">Видалити</button>
+                </form>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>Питань ще немає.</p>
+}
+
+@section Scripts {
+    <script>
+        const assignmentType = document.getElementById("assignmentType");
+        const optionsSection = document.getElementById("optionsSection");
+        const openTextSection = document.getElementById("openTextSection");
+        const addOptionBtn = document.getElementById("addOptionBtn");
+        const optionsList = document.getElementById("optionsList");
+        const form = document.getElementById("addAssignmentForm");
+
+        function getNextIndex() {
+            return optionsList.querySelectorAll(".option-item").length;
+        }
+
+        addOptionBtn.addEventListener("click", () => {
+            const index = getNextIndex();
+            const div = document.createElement("div");
+            div.classList.add("option-item", "mb-2");
+            div.innerHTML = `
+                    <input type="text" name="optionTexts[${index}]" class="form-control mb-1" placeholder="Варіант відповіді" />
+                    <input type="checkbox" class="optionCorrectCheckbox" name="optionCorrect[${index}]" value="true" /> Правильна
+                `;
+            optionsList.appendChild(div);
+            bindCheckboxBehavior();
+        });
+
+        function bindCheckboxBehavior() {
+            const type = assignmentType.value;
+            const boxes = document.querySelectorAll(".optionCorrectCheckbox");
+
+            boxes.forEach(box => {
+                box.removeEventListener("change", checkboxHandler);
+                box.addEventListener("change", checkboxHandler);
+            });
+
+            function checkboxHandler(e) {
+                if (type === "quiz_single" && e.target.checked) {
+                    boxes.forEach(b => { if (b !== e.target) b.checked = false; });
+                }
+            }
+        }
+
+        assignmentType.addEventListener("change", () => {
+            const type = assignmentType.value;
+            if (type === "open_text") {
+                optionsSection.style.display = "none";
+                openTextSection.style.display = "block";
+            } else {
+                optionsSection.style.display = "block";
+                openTextSection.style.display = "none";
+            }
+            bindCheckboxBehavior();
+        });
+
+        form.addEventListener("submit", () => {
+            form.querySelectorAll("input[type=hidden][name^='optionCorrect']").forEach(i => i.remove());
+            const options = optionsList.querySelectorAll(".option-item");
+            options.forEach((opt, i) => {
+                const checkbox = opt.querySelector(".optionCorrectCheckbox");
+                const hidden = document.createElement("input");
+                hidden.type = "hidden";
+                hidden.name = `optionCorrect[${i}]`;
+                hidden.value = checkbox.checked ? "true" : "false";
+                form.appendChild(hidden);
+            });
+        });
+
+        bindCheckboxBehavior();
+    </script>
+}

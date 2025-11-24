@@ -1,0 +1,60 @@
+﻿@model List<courses_platform.Models.CourseVerification>
+@{
+    ViewData["Title"] = "Заявки на курси";
+}
+
+<!-- Ця сторінка:
+   Таблиця із усіх заявок на курси в системі, із можливістю пошуку по назві та автору або айді.
+   Вивід - лише айді + назва курсу + автор курсу + Кнопка "деталі", без деталей на цій .
+   Можливість з цієї сторінки перейти на іншу, більш детальну для конкретної заявки (кнопка деталей).
+ -->
+
+<h2>Заявки на курси</h2>
+
+<form method="get" class="mb-3">
+    <input type="text" name="search" value="@ViewBag.Search" placeholder="Пошук по назві, автору або ID" class="form-control" />
+    <button type="submit" class="btn btn-primary mt-2">Пошук</button>
+</form>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Назва курсу</th>
+            <th>Дії</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var v in Model)
+        {
+            <tr>
+                <td>@v.VerificationId</td>
+                <td>@v.Course.Title</td>
+                <td>
+                    <a class="btn btn-info btn-sm" href="@Url.Action("CourseDetails", new { verificationId = v.VerificationId })">Деталі</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+        {
+            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { search = ViewBag.Search, page = i })">@i</a>
+            </li>
+        }
+    </ul>
+</nav>
+
+
+<!-- Сторінка деталі уроку:
+    Вивід інформації про урок: Назва
+
+    Далі - Вивід усіх матеріалів у уроці циклом поблоково, виведення в залежності від типу медіа: текст, картинка, відео
+
+    Кнопка повернутись назад
+-->
+

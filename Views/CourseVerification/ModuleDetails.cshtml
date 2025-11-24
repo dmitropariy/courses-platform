@@ -1,0 +1,52 @@
+﻿@model courses_platform.Models.Module
+
+@{
+    ViewData["Title"] = "Деталі модуля";
+}
+
+<!-- Сторінка деталі модуля:
+    Вивід інформації про модуль: Назва, опис, порядок у курсі.
+
+    Далі - Вивід усіх уроків у модулі, можливість перейти на кожен урок, щоб побачити його деталі.
+    Спочатку просто список назв уроків в визначеному порядку. кнопка деталі для переходу на ЩЕ одну сторінку з деталями уроку.
+
+    Також посилання на сторінку ассаймента пов'язаного з цим модулем
+
+    Кнопка повернутись назад
+-->
+
+
+<h2>Деталі модуля: @Model.Title</h2>
+
+<div>
+    <p><strong>Назва модуля:</strong> @Model.Title</p>
+    <p><strong>Опис:</strong> @Model.ModuleDescription</p>
+    <p><strong>Порядок у курсі:</strong> @Model.OrderNumber</p>
+</div>
+
+<hr />
+
+<h3>Уроки у модулі</h3>
+<ul>
+    @foreach (var lesson in Model.Lessons.OrderBy(l => l.OrderNumber))
+    {
+        <li>
+            @lesson.OrderNumber - @lesson.Title
+            <form action="/CourseVerification/LessonDetails" method="get" style="display:inline;">
+                <input type="hidden" name="lessonId" value="@lesson.LessonId" />
+                <button type="submit" class="btn btn-secondary btn-sm">Деталі уроку</button>
+            </form>
+        </li>
+    }
+</ul>
+
+<hr />
+
+<div>
+    <form action="/CourseVerification/ModuleAssignments" method="get" style="display:inline;">
+        <input type="hidden" name="moduleId" value="@Model.ModuleId" />
+        <button type="submit" class="btn btn-success">Перейти до тестового завдання модуля</button>
+    </form>
+
+    <a href="javascript:history.back()" class="btn btn-outline-secondary">Повернутись назад</a>
+</div>

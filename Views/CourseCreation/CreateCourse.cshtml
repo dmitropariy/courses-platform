@@ -1,0 +1,31 @@
+﻿@model courses_platform.Models.Course
+
+@{
+    ViewData["Title"] = "Створення курса";
+}
+
+<p> Привіт Ім'я Професора! Тут ти можеш створити новий курс</p> <!-- Лаб3 - Додати виведення ім'я -->
+
+<form asp-action="CreateCourse" method="post">
+    <div class="form-group">
+        <label asp-for="Title">Назва курсу</label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Description">Короткий опис курсу</label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <br />
+
+    <button type="submit" class="btn btn-primary">Перейти далі</button>
+</form>
+
+<!-- Ця сторінка:
+   Напис типу Привіт професоре! Тут ти можеш створити новий курс.
+
+   Форма створення курсу: Назва курсу, короткий опис, Кнопка Перейти далі - перехід на сторінку створення модулів та надсилання форми.
+-->

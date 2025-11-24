@@ -1,0 +1,88 @@
+﻿@model courses_platform.Models.ViewModels.SubmissionSearchModel
+@{
+    ViewData["Title"] = "Пошук відповідей";
+}
+<h2>Пошук відповідей студентів</h2>
+
+<form method="post" asp-action="Search" class="mb-4">
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">Дата від</label>
+            <input type="datetime-local" class="form-control" asp-for="DateFrom" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Дата до</label>
+            <input type="datetime-local" class="form-control" asp-for="DateTo" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Тип завдання</label>
+            <select class="form-select" asp-for="AssignmentType" asp-items="@ViewBag.AssignmentTypes"></select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Початок тексту</label>
+            <input type="text" class="form-control" asp-for="AnswerPrefix" placeholder="наприклад: Так" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Кінець тексту</label>
+            <input type="text" class="form-control" asp-for="AnswerSuffix" placeholder="наприклад: !" />
+        </div>
+        <div class="col-md-9">
+            <label class="form-label">Курси (Ctrl+click)</label>
+            <select multiple class="form-select" asp-for="SelectedCourseIds" asp-items="@ViewBag.Courses"
+                    style="height:120px;"></select>
+        </div>
+        <div class="col-md-3 align-self-end">
+            <button type="submit" class="btn btn-success w-100">Знайти</button>
+        </div>
+    </div>
+</form>
+
+@if (ViewBag.Results != null)
+{
+    <h4>Знайдено: @ViewBag.TotalCount записів</h4>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Курс</th>
+                <th>Модуль</th>
+                <th>Завдання</th>
+                <th>Відповідь</th>
+                <th>Правильно</th>
+                <th>Оцінено</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in ViewBag.Results as List<courses_platform.Models.ViewModels.SubmissionResultViewModel>)
+            {
+                <tr>
+                    <td>@r.SubmissionId</td>
+                    <td>@r.CourseTitle</td>
+                    <td>@r.ModuleTitle</td>
+                    <td>@r.AssignmentTitle</td>
+                    <td>@(string.IsNullOrWhiteSpace(r.AnswerText) ? "-" : r.AnswerText)</td>
+                    <td>@(r.IsCorrect == true ? "Так" : r.IsCorrect == false ? "Ні" : "-")</td>
+                    <td>@(r.GradedAt?.ToString("dd.MM.yyyy HH:mm") ?? "-")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                    <a class="page-link" asp-action="Search"
+                       asp-route-page="@i"
+                       asp-all-route-data="@(new Dictionary<string, string> { {"DateFrom", Model.DateFrom?.ToString("o")},
+                                                                             {"DateTo", Model.DateTo?.ToString("o")},
+                                                                             {"AssignmentType", Model.AssignmentType ?? ""},
+                                                                             {"AnswerPrefix", Model.AnswerPrefix ?? ""},
+                                                                             {"AnswerSuffix", Model.AnswerSuffix ?? ""} })">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
