@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using courses_platform.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 
-namespace courses_platform.Models
+namespace courses_platform.Contexts
 {
     public class ApplicationDbContext : DbContext
     {
@@ -11,6 +12,11 @@ namespace courses_platform.Models
         {
         }
 
+        public ApplicationDbContext(DbContextOptions options) : base(options)
+        {
+        }
+
+        public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Module> Modules { get; set; }
         public DbSet<Lesson> Lessons { get; set; }
@@ -20,10 +26,26 @@ namespace courses_platform.Models
         public DbSet<Submission> Submissions { get; set; }
         public DbSet<Certificate> Certificates { get; set; }
         public DbSet<CourseVerification> CourseVerifications { get; set; }
+        public DbSet<StudentCourse> StudentCourses { get; set; }
+        public DbSet<ProfessorCourse> ProfessorCourses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // prevent EF Core from creating nvarchar(max) for string properties by default. SQlite compatibility
+            foreach (var entity in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var prop in entity.GetProperties()
+                         .Where(p => p.ClrType == typeof(string) && !p.IsKey()))
+                {
+                    if (!prop.GetMaxLength().HasValue)
+                    {
+                        // Default safe length for any missed string
+                        prop.SetMaxLength(255);
+                    }
+                }
+            }
 
             // === Визначення зв’язків ===
 
@@ -82,6 +104,22 @@ namespace courses_platform.Models
                 .WithMany(c => c.Verifications)
                 .HasForeignKey(v => v.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AppUser>()
+                .HasIndex(u => u.ExternalUserId)
+                .IsUnique();
+
+            modelBuilder.Entity<StudentCourse>()
+                .HasOne(sc => sc.Student)
+                .WithMany(u => u.StudentCourses)
+                .HasForeignKey(sc => sc.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ProfessorCourse>()
+                .HasOne(pc => pc.Professor)
+                .WithMany(u => u.ProfessorCourses)
+                .HasForeignKey(pc => pc.ProfessorId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

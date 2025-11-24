@@ -1,0 +1,65 @@
+﻿@model courses_platform.ViewComponents.NavbarViewModel
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">Courses_Platform</a>
+
+        <div class="collapse navbar-collapse justify-content-between">
+            <ul class="navbar-nav mb-2 mb-lg-0">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    if (Model.Role == "Student")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Courses" asp-action="Index">Каталог курсів</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link"
+                               asp-controller="Account"
+                               asp-action="ProfileStudent"
+                               asp-route-id="@Model.LocalUserId">
+                                Мій профіль
+                            </a>
+                        </li>
+                    }
+                    else if (Model.Role == "Professor")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Courses" asp-action="Index">Каталог курсів</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="CourseCreation" asp-action="CreateCourse">Створення курсу</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link"
+                               asp-controller="Account"
+                               asp-action="ProfileProfessor"
+                               asp-route-id="@Model.LocalUserId">
+                                Мій профіль
+                            </a>
+                        </li>
+                    }
+                    else if (Model.Role == "Admin")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Admin" asp-action="Index">Адмінська панель</a>
+                        </li>
+                    }
+                }
+            </ul>
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <form method="post" asp-controller="Account" asp-action="Logout" class="d-inline">
+                            <button type="submit" class="btn btn-link nav-link text-danger fw-semibold">
+                                Вихід
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            }
+        </div>
+    </div>
+</nav>

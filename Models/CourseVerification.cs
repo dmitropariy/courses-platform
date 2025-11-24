@@ -11,15 +11,14 @@ namespace courses_platform.Models
         [ForeignKey("Course")]
         public int CourseId { get; set; }
 
-        // Додати в 3 лабі юзера-ревьюера пізніше
+        [Required, MaxLength(50)]
+        public string Status { get; set; } = null!;        // approved / rejected / pending
 
-        public string Status { get; set; } // approved / rejected / pending
-
+        [MaxLength(2000)]
         public string? ReviewComment { get; set; }
 
         public DateTime? VerifiedAt { get; set; }
 
-
-        public Course Course { get; set; }
+        public Course Course { get; set; } = null!;
     }
 }

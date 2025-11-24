@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using courses_platform.Models;
 using System;
+using Microsoft.AspNetCore.Authorization;
+using courses_platform.Contexts;
 
 public class CourseVerificationController : Controller
 {
@@ -16,7 +17,8 @@ public class CourseVerificationController : Controller
     // LAB3 : Додати пошук по імені автора курсу
     // GET: Список всіх заявок
     [HttpGet]
-    public IActionResult Index(string search, int page = 1)
+    [Authorize(Roles = "Admin")]
+    public IActionResult VerificationPanel(string search, int page = 1)
     {
         var query = _context.CourseVerifications
             .Include(v => v.Course)
@@ -47,6 +49,7 @@ public class CourseVerificationController : Controller
 
     // GET: Деталі конкретної заявки
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public IActionResult CourseDetails(int verificationId)
     {
         var verification = _context.CourseVerifications
@@ -61,6 +64,7 @@ public class CourseVerificationController : Controller
 
     // POST: Прийняти заявку
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public IActionResult Approve(int verificationId)
     {
         var verification = _context.CourseVerifications
@@ -77,6 +81,7 @@ public class CourseVerificationController : Controller
 
     // POST: Відхилити заявку
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public IActionResult Reject(int verificationId)
     {
         var verification = _context.CourseVerifications
@@ -93,6 +98,7 @@ public class CourseVerificationController : Controller
 
     // GET: Перегляд деталей модуля (Уроки + Тестове завдання)
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public IActionResult ModuleDetails(int moduleId)
     {
         var module = _context.Modules
@@ -111,6 +117,7 @@ public class CourseVerificationController : Controller
 
     // GET: Перегляд тестового завдання модуля
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public IActionResult ModuleAssignments(int moduleId)
     {
         var module = _context.Modules
@@ -127,6 +134,7 @@ public class CourseVerificationController : Controller
 
     // GET: Перегляд деталей уроку (КонтентБлоки)
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public IActionResult LessonDetails(int lessonId)
     {
         var lesson = _context.Lessons

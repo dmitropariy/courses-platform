@@ -1,0 +1,442 @@
+Vagrant.configure("2") do |config|
+  
+  # Ubuntu VM
+  config.vm.define "ubuntu" do |ubuntu|
+    ubuntu.vm.box = "ubuntu/jammy64"
+    ubuntu.vm.hostname = "ubuntu-courses"
+    
+    ubuntu.vm.network "forwarded_port", guest: 5000, host: 5000
+    ubuntu.vm.network "forwarded_port", guest: 5001, host: 5001
+
+    ubuntu.vm.provider "virtualbox" do |vb|
+      vb.name = "Ubuntu-Courses-Platform"
+      vb.gui = true
+      vb.memory = "4096"
+      vb.cpus = 2
+    end
+    
+    ubuntu.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      
+      apt-get install -y wget apt-transport-https software-properties-common git
+      
+      wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+      dpkg -i packages-microsoft-prod.deb
+      rm packages-microsoft-prod.deb
+      
+      apt-get update
+      apt-get install -y dotnet-sdk-8.0
+      
+      echo "Installing SQL Server..."
+
+      wget -qO- https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+      add-apt-repository "$(wget -qO- https://packages.microsoft.com/config/ubuntu/22.04/mssql-server-2022.list)"
+
+      apt-get update
+      apt-get install -y mssql-server
+
+      export ACCEPT_EULA=Y
+      export MSSQL_SA_PASSWORD='MyP@ssw0rd!2025'
+      export MSSQL_PID='Developer'
+
+      /opt/mssql/bin/mssql-conf setup
+
+      systemctl status mssql-server --no-pager
+
+      curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+      apt-get update
+      ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+
+      echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> /home/vagrant/.bashrc
+      export PATH="$PATH:/opt/mssql-tools18/bin"
+
+      sleep 15
+      
+      echo "SQL Server installed!"
+
+      echo "================================"
+      echo "Setting up AuthServer project..."
+      echo "================================"
+      
+      cd /home/vagrant
+      git clone https://github.com/laylin41/AuthServerCourses-Platform.git authserver
+      chown -R vagrant:vagrant authserver
+      
+      curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+      chmod +x mkcert-v*-linux-amd64
+      mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+
+      mkcert -install
+      mkcert localhost 127.0.0.1 ::1
+      mkdir authserver/certs
+      cp localhost+2*.pem authserver/certs/
+
+      # su - vagrant -c "cd /home/vagrant/authserver &&
+      # mkdir keys &&
+      # dotnet dev-certs https -ep ./keys/identity.pfx -p "StrongP@ssw0rd!""
+      # cp /home/vagrant/authserver/keys/identity.pfx /usr/local/share/ca-certificates/identity.crt
+      # update-ca-certificates
+      
+      su - vagrant -c "dotnet tool install --global dotnet-ef"
+      echo 'export PATH="$PATH:/home/vagrant/.dotnet/tools"' >> /home/vagrant/.bashrc
+      export PATH="$PATH:/home/vagrant/.dotnet/tools"
+      
+      cat > /home/vagrant/authserver/appsettings.Production.json <<'EOF'
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=AuthServerCoursesPlatformDB;User Id=sa;Password=MyP@ssw0rd!2025;TrustServerCertificate=True;"
+  },
+  "Cloudinary": {
+    "CloudName": "dxtnc9hfj",
+    "ApiKey": "978155354124382",
+    "ApiSecret": "xGSQr0JeoUZ0B3SUAIovaUiIHgw"
+  }
+}
+EOF
+      
+      su - vagrant -c "cd /home/vagrant/authserver && \
+          ASPNETCORE_ENVIRONMENT=Production \
+          dotnet-ef database update"
+      
+      su - vagrant -c "cd /home/vagrant/authserver && dotnet build"
+      
+      cat > /etc/systemd/system/authserver.service <<'EOF'
+[Unit]
+Description=AuthServer Application
+After=network.target mssql-server.service
+
+[Service]
+Type=simple
+User=vagrant
+WorkingDirectory=/home/vagrant/authserver
+ExecStart=/usr/bin/dotnet run --project /home/vagrant/authserver --urls "https://0.0.0.0:5000" --environment Production
+Restart=always
+RestartSec=10
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment="DOTNET_ENVIRONMENT=Production"
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=authserver
+
+[Install]
+WantedBy=multi-user.target
+EOF
+      su - vagrant -c "cd /home/vagrant/authserver && dotnet restore"
+      
+      systemctl daemon-reload
+      systemctl enable authserver
+      systemctl start authserver
+      
+      echo "================================"
+      echo "AuthServer project installed on Ubuntu!"
+      echo "Running on port 5000"
+      echo "================================"
+      
+      sleep 5
+
+      echo "================================"
+      echo "Setting up Courses Platform project..."
+      echo "================================"
+
+      cd /home/vagrant
+      git clone https://github.com/dmitropariy/courses-platform.git app
+      chown -R vagrant:vagrant app
+      mkdir app/certs
+      cp localhost+2*.pem app/certs/
+
+      cd app
+      git checkout vagrant-auth
+
+      cat > /home/vagrant/app/appsettings.Production.json <<'EOF'
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=CoursesPlatformDB;User Id=sa;Password=MyP@ssw0rd!2025;TrustServerCertificate=True;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "Cloudinary": {
+    "CloudName": "dxtnc9hfj",
+    "ApiKey": "978155354124382",
+    "ApiSecret": "xGSQr0JeoUZ0B3SUAIovaUiIHgw"
+  }
+}
+EOF
+      
+      su - vagrant -c "cd /home/vagrant/app && dotnet restore"
+      
+      su - vagrant -c "cd /home/vagrant/app && \
+          ASPNETCORE_ENVIRONMENT=Production \
+          dotnet-ef database update"
+      
+      su - vagrant -c "cd /home/vagrant/app && dotnet build"
+      
+      cat > /etc/systemd/system/dotnetapp.service <<'EOF'
+[Unit]
+Description=.NET Application
+After=network.target authserver.service
+
+[Service]
+Type=simple
+User=vagrant
+WorkingDirectory=/home/vagrant/app
+ExecStart=/usr/bin/dotnet run --project /home/vagrant/app/courses-platform.csproj --urls "https://0.0.0.0:5001" --environment Production
+Restart=always
+RestartSec=10
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment="DOTNET_ENVIRONMENT=Production"
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dotnetapp
+
+[Install]
+WantedBy=multi-user.target
+EOF
+      
+      systemctl daemon-reload
+      systemctl enable dotnetapp
+      systemctl start dotnetapp
+      
+      echo "================================"
+      echo "Ubuntu setup complete!"
+      echo "================================"
+      echo "AuthServer running on port 5000"
+      echo "  Check status: sudo systemctl status authserver"
+      echo "  Logs: sudo journalctl -u authserver -f"
+      echo ""
+      echo "Courses Platform running on port 5001"
+      echo "  Check status: sudo systemctl status dotnetapp"
+      echo "  Logs: sudo journalctl -u dotnetapp -f"
+      echo "================================"
+    SHELL
+  end
+
+  # CentOS VM
+  config.vm.define "centos" do |centos|
+    centos.vm.box = "centos/stream9"
+    centos.vm.hostname = "centos-courses"
+ 
+    centos.vm.network "forwarded_port", guest: 5000, host: 5002
+    centos.vm.network "forwarded_port", guest: 5001, host: 5003
+    
+    centos.vm.provider "virtualbox" do |vb|
+      vb.name = "CentOS-Courses-Platform"
+      vb.gui = true
+      vb.memory = "4096"
+      vb.cpus = 2
+    end
+    
+    centos.vm.provision "shell", inline: <<-SHELL
+      dnf update -y
+      
+      dnf install -y wget git
+      
+      echo "Installing SELinux tools..."
+      dnf install -y policycoreutils-python-utils
+      
+      echo "Installing .NET SDK 8.0..."
+      dnf install -y dotnet-sdk-8.0
+      
+      echo "Installing SQL Server..."
+      
+      curl -o /etc/yum.repos.d/mssql-server.repo https://packages.microsoft.com/config/rhel/9/mssql-server-2022.repo
+      
+      dnf install -y mssql-server
+      
+      export ACCEPT_EULA=Y
+      export MSSQL_SA_PASSWORD='MyP@ssw0rd!2025'
+      export MSSQL_PID='Developer'
+      
+      /opt/mssql/bin/mssql-conf setup
+      
+      systemctl status mssql-server --no-pager
+      
+      curl -o /etc/yum.repos.d/msprod.repo https://packages.microsoft.com/config/rhel/9/prod.repo
+      
+      ACCEPT_EULA=Y dnf install -y mssql-tools18 unixODBC-devel
+      
+      echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> /home/vagrant/.bashrc
+      export PATH="$PATH:/opt/mssql-tools18/bin"
+      
+      sleep 15
+      
+      echo "SQL Server installed!"
+      
+      echo "================================"
+      echo "Setting up AuthServer project..."
+      echo "================================"
+      
+      cd /home/vagrant
+      git clone https://github.com/laylin41/AuthServerCourses-Platform.git authserver
+      chown -R vagrant:vagrant authserver
+
+      curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+      chmod +x mkcert-v*-linux-amd64
+      mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+
+      mkcert -install
+      mkcert localhost 127.0.0.1 ::1
+      mkdir authserver/certs
+      cp localhost+2*.pem authserver/certs/
+
+
+      # su - vagrant -c "cd /home/vagrant/authserver &&
+      # mkdir keys &&
+      # dotnet dev-certs https -ep ./keys/identity.pfx -p "StrongP@ssw0rd!""
+      # cp /home/vagrant/authserver/keys/identity.pfx /usr/local/share/ca-certificates/identity.crt
+      # update-ca-certificates
+
+      su - vagrant -c "dotnet tool install --global dotnet-ef"
+      echo 'export PATH="$PATH:/home/vagrant/.dotnet/tools"' >> /home/vagrant/.bashrc
+      export PATH="$PATH:/home/vagrant/.dotnet/tools"
+      
+      cat > /home/vagrant/authserver/appsettings.Production.json <<'EOF'
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=AuthServerCoursesPlatformDB;User Id=sa;Password=MyP@ssw0rd!2025;TrustServerCertificate=True;"
+  },
+  "Cloudinary": {
+    "CloudName": "dxtnc9hfj",
+    "ApiKey": "978155354124382",
+    "ApiSecret": "xGSQr0JeoUZ0B3SUAIovaUiIHgw"
+  }
+}
+EOF
+      
+      su - vagrant -c "cd /home/vagrant/authserver && \
+          ASPNETCORE_ENVIRONMENT=Production \
+          dotnet-ef database update"
+      
+      su - vagrant -c "cd /home/vagrant/authserver && dotnet build"
+      
+      cat > /etc/systemd/system/authserver.service <<'EOF'
+[Unit]
+Description=AuthServer Application
+After=network.target mssql-server.service
+
+[Service]
+Type=simple
+User=vagrant
+WorkingDirectory=/home/vagrant/authserver
+ExecStart=/usr/bin/dotnet run --project /home/vagrant/authserver --urls "https://0.0.0.0:5000" --environment Production
+Restart=always
+RestartSec=10
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment="DOTNET_ENVIRONMENT=Production"
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=authserver
+
+[Install]
+WantedBy=multi-user.target
+EOF
+      su - vagrant -c "cd /home/vagrant/authserver && dotnet restore"
+
+      systemctl daemon-reload
+      systemctl enable authserver
+      systemctl start authserver
+      
+      echo "================================"
+      echo "AuthServer project installed on CentOS!"
+      echo "Running on port 5000"
+      echo "================================"
+      
+      sleep 5
+      
+      echo "================================"
+      echo "Setting up Courses Platform project..."
+      echo "================================"
+      
+      cd /home/vagrant
+      git clone https://github.com/dmitropariy/courses-platform.git app
+      chown -R vagrant:vagrant app
+      mkdir app/certs
+      cp localhost+2*.pem app/certs/
+
+      cd app
+      git checkout vagrant-auth
+      
+      cat > /home/vagrant/app/appsettings.Production.json <<'EOF'
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=CoursesPlatformDB;User Id=sa;Password=MyP@ssw0rd!2025;TrustServerCertificate=True;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "Cloudinary": {
+    "CloudName": "dxtnc9hfj",
+    "ApiKey": "978155354124382",
+    "ApiSecret": "xGSQr0JeoUZ0B3SUAIovaUiIHgw"
+  }
+}
+EOF
+      
+      su - vagrant -c "cd /home/vagrant/app && dotnet restore"
+      
+      su - vagrant -c "cd /home/vagrant/app && \
+          ASPNETCORE_ENVIRONMENT=Production \
+          dotnet-ef database update"
+      
+      su - vagrant -c "cd /home/vagrant/app && dotnet build"
+      
+      cat > /etc/systemd/system/dotnetapp.service <<'EOF'
+[Unit]
+Description=.NET Application
+After=network.target authserver.service
+
+[Service]
+Type=simple
+User=vagrant
+WorkingDirectory=/home/vagrant/app
+ExecStart=/usr/bin/dotnet run --project /home/vagrant/app/courses-platform.csproj --urls "https://0.0.0.0:5001" --environment Production
+Restart=always
+RestartSec=10
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment="DOTNET_ENVIRONMENT=Production"
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dotnetapp
+
+[Install]
+WantedBy=multi-user.target
+EOF
+      
+      systemctl daemon-reload
+      systemctl enable dotnetapp
+      systemctl start dotnetapp
+      
+      echo "================================"
+      echo "CentOS setup complete!"
+      echo "================================"
+      echo "AuthServer running on port 5000"
+      echo "  Check status: sudo systemctl status authserver"
+      echo "  Logs: sudo journalctl -u authserver -f"
+      echo ""
+      echo "Courses Platform running on port 5001"
+      echo "  Check status: sudo systemctl status dotnetapp"
+      echo "  Logs: sudo journalctl -u dotnetapp -f"
+      echo "================================"
+    SHELL
+  end
+end

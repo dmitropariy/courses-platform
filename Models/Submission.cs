@@ -11,17 +11,15 @@ namespace courses_platform.Models
         [ForeignKey("Assignment")]
         public int AssignmentId { get; set; }
 
-        // Додати в 3 лабі зв'язок з юзером, який зробив сабмішн
+        [MaxLength(4000)]
+        public string? AnswerText { get; set; }           // open-text answer
 
-        public string AnswerText { get; set; } // для опен текст відповідей
-
-        public string SelectedOptions { get; set; } // JSON string, для мульти чойс відповідей
+        [MaxLength(1000)]
+        public string? SelectedOptions { get; set; }      // comma-separated IDs
 
         public bool? IsCorrect { get; set; }
-
         public DateTime? GradedAt { get; set; }
 
-
-        public Assignment Assignment { get; set; }
+        public Assignment Assignment { get; set; } = null!;
     }
 }

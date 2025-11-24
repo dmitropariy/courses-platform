@@ -1,0 +1,17 @@
+﻿@{
+    ViewData["Title"] = "Admin Panel";
+}
+
+<div class="mt-4" style="text-align: center">
+    <p>Верифікація курсів</p>
+    <a asp-controller="CourseVerification" asp-action="VerificationPanel" class="btn btn-warning mb-3">Перейти до панелі управління верифікаціями</a>
+
+    <p>Пошук відповідей студентів</p>
+    <a asp-controller="Admin" asp-action="Search" class="btn btn-warning mb-3">Перейти до сторінки пошуку відповідей студентів</a>
+
+    <p>Тестування версії АПІ 1</p>
+    <a asp-controller="Courses" asp-action="OldCourses" class="btn btn-warning mb-3">Старий доступ до курсів</a>
+
+    <p>Тестування версії АПІ 2</p>
+    <a asp-controller="Courses" asp-action="NewCourses" class="btn btn-warning mb-3">Новий доступ до курсів</a>
+</div>

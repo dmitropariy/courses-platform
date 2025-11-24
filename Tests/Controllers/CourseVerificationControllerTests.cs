@@ -1,4 +1,5 @@
-﻿using courses_platform.Models;
+﻿using courses_platform.Contexts;
+using courses_platform.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -53,7 +54,7 @@ namespace courses_platform.Tests.Controllers
             var context = GetDbContext();
             var controller = new CourseVerificationController(context);
 
-            var result = controller.Index(null) as ViewResult;
+            var result = controller.VerificationPanel(null) as ViewResult;
             var model = result.Model as List<CourseVerification>;
 
             Assert.NotNull(result);
@@ -68,7 +69,7 @@ namespace courses_platform.Tests.Controllers
             var context = GetDbContext();
             var controller = new CourseVerificationController(context);
 
-            var result = controller.Index("c#") as ViewResult;
+            var result = controller.VerificationPanel("c#") as ViewResult;
             var model = result.Model as List<CourseVerification>;
 
             Assert.All(model, v => Assert.Contains("c#", v.Course.Title.ToLower()));

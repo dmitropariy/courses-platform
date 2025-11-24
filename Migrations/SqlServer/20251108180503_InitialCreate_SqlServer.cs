@@ -3,22 +3,35 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace courses_platform.Migrations
+namespace courses_platform.Migrations.SqlServer
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCreate_SqlServer : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "AppUsers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ExternalUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppUsers", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Courses",
                 columns: table => new
                 {
                     CourseId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
                     CompletedCount = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -34,7 +47,7 @@ namespace courses_platform.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CourseId = table.Column<int>(type: "int", nullable: false),
                     IssueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CertificateUrl = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    CertificateUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -54,8 +67,8 @@ namespace courses_platform.Migrations
                     VerificationId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CourseId = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ReviewComment = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ReviewComment = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
@@ -76,7 +89,8 @@ namespace courses_platform.Migrations
                     ModuleId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CourseId = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    ModuleDescription = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
                     OrderNumber = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -91,15 +105,71 @@ namespace courses_platform.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ProfessorCourses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProfessorId = table.Column<int>(type: "int", nullable: false),
+                    CourseId = table.Column<int>(type: "int", nullable: false),
+                    AssignedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProfessorCourses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProfessorCourses_AppUsers_ProfessorId",
+                        column: x => x.ProfessorId,
+                        principalTable: "AppUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProfessorCourses_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "CourseId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StudentCourses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StudentId = table.Column<int>(type: "int", nullable: false),
+                    CourseId = table.Column<int>(type: "int", nullable: false),
+                    EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsCompleted = table.Column<bool>(type: "bit", nullable: false),
+                    CompletedTime = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StudentCourses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StudentCourses_AppUsers_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "AppUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_StudentCourses_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "CourseId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Assignments",
                 columns: table => new
                 {
                     AssignmentId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ModuleId = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    QuestionText = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Title = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    QuestionText = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -119,7 +189,9 @@ namespace courses_platform.Migrations
                     LessonId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ModuleId = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Title = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    LessonDescription = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
+                    OrderNumber = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -139,7 +211,7 @@ namespace courses_platform.Migrations
                     OptionId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AssignmentId = table.Column<int>(type: "int", nullable: false),
-                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     IsCorrect = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -160,8 +232,8 @@ namespace courses_platform.Migrations
                     SubmissionId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AssignmentId = table.Column<int>(type: "int", nullable: false),
-                    AnswerText = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SelectedOptions = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AnswerText = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
+                    SelectedOptions = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     IsCorrect = table.Column<bool>(type: "bit", nullable: true),
                     GradedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -183,9 +255,9 @@ namespace courses_platform.Migrations
                     LessonContentBlockId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     LessonId = table.Column<int>(type: "int", nullable: false),
-                    BlockType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MediaUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BlockType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
+                    MediaUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     Order = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -198,6 +270,12 @@ namespace courses_platform.Migrations
                         principalColumn: "LessonId",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppUsers_ExternalUserId",
+                table: "AppUsers",
+                column: "ExternalUserId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AssignmentOptions_AssignmentId",
@@ -235,6 +313,26 @@ namespace courses_platform.Migrations
                 column: "CourseId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProfessorCourses_CourseId",
+                table: "ProfessorCourses",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProfessorCourses_ProfessorId",
+                table: "ProfessorCourses",
+                column: "ProfessorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StudentCourses_CourseId",
+                table: "StudentCourses",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StudentCourses_StudentId",
+                table: "StudentCourses",
+                column: "StudentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Submissions_AssignmentId",
                 table: "Submissions",
                 column: "AssignmentId");
@@ -256,10 +354,19 @@ namespace courses_platform.Migrations
                 name: "LessonContentBlocks");
 
             migrationBuilder.DropTable(
+                name: "ProfessorCourses");
+
+            migrationBuilder.DropTable(
+                name: "StudentCourses");
+
+            migrationBuilder.DropTable(
                 name: "Submissions");
 
             migrationBuilder.DropTable(
                 name: "Lessons");
+
+            migrationBuilder.DropTable(
+                name: "AppUsers");
 
             migrationBuilder.DropTable(
                 name: "Assignments");

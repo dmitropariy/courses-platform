@@ -1,0 +1,29 @@
+﻿@{
+    ViewData["Title"] = "Курси (нова версія API)";
+}
+
+<h2>Курси – v2 (найновіша)</h2>
+
+<div id="new-courses">Завантаження...</div>
+
+<script>
+    fetch('/api/v2/courses')
+        .then(r => r.json())
+        .then(data => {
+            const list = data.data.map(c => `
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <h5>${c.courseId}: ${c.title}</h5>
+                            <p>Description: ${c.description}</p>
+                            <p>Students completed the course: ${c.completedCount}</p>
+                        </div>
+                    </div>`).join('');
+
+            document.getElementById('new-courses').innerHTML = list +
+                `<p class="text-muted">Версія: ${data.version} | Всього курсів: ${data.total} | Згенеровано: ${new Date(data.generatedAt).toLocaleString()}</p>`;
+        })
+        .catch(err => {
+            document.getElementById('new-courses').innerHTML = '<p>Помилка завантаження курсів</p>';
+            console.error(err);
+        });
+</script>

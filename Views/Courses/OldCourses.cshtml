@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "Курси (стара версія API)";
+}
+
+<h2>Курси – v1 (сумісна)</h2>
+
+<div id="old-courses">Завантаження...</div>
+
+<script>
+    fetch('/api/v1/courses')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('old-courses').innerHTML =
+                '<ul>' + data.data.map(c => `<li><strong>${c.id}</strong>: ${c.title}. Description: ${c.description}</li>`).join('') + '</ul>' +
+                `<p>Всього: ${data.total}</p>`;
+        })
+        .catch(err => {
+            document.getElementById('old-courses').innerHTML = '<p>Помилка завантаження курсів</p>';
+            console.error(err);
+        });
+</script>

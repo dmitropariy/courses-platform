@@ -11,14 +11,16 @@ namespace courses_platform.Models
         [ForeignKey("Module")]
         public int ModuleId { get; set; }
 
-        public string Title { get; set; }
+        [Required, MaxLength(255)]
+        public string Title { get; set; } = null!;
 
-        public string Type { get; set; } // quiz_single / quiz_multiple / open_text
+        [Required, MaxLength(100)]
+        public string Type { get; set; } = null!;          // quiz_single / quiz_multiple / open_text
 
-        public string QuestionText { get; set; }
+        [Required, MaxLength(4000)]
+        public string QuestionText { get; set; } = null!;
 
-
-        public Module Module { get; set; }
+        public Module Module { get; set; } = null!;
         public ICollection<AssignmentOption> Options { get; set; } = new List<AssignmentOption>();
         public ICollection<Submission> Submissions { get; set; } = new List<Submission>();
     }

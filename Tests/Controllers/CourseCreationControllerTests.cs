@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Moq;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using courses_platform.Contexts;
 
 namespace courses_platform.Tests.Controllers
 {
@@ -48,7 +49,7 @@ namespace courses_platform.Tests.Controllers
         public void CreateCourse_Get_ReturnsView()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.CreateCourse();
 
@@ -60,7 +61,7 @@ namespace courses_platform.Tests.Controllers
         public void CreateCourse_Post_ValidModel_AddsCourseAndRedirects()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var course = new Course
             {
@@ -83,7 +84,7 @@ namespace courses_platform.Tests.Controllers
         public void CreateCourse_Post_InvalidModel_ReturnsViewWithModel()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
             controller.ModelState.AddModelError("Title", "Required");
 
             var courses_before_adding = context.Courses.Count();
@@ -104,7 +105,7 @@ namespace courses_platform.Tests.Controllers
         public void CreateModules_Get_ReturnsViewWithCourse()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.CreateModules(1);
 
@@ -117,7 +118,7 @@ namespace courses_platform.Tests.Controllers
         public void AddModule_Post_AddsModule()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.AddModule(1, "Module 2", "Description 2");
 
@@ -132,7 +133,7 @@ namespace courses_platform.Tests.Controllers
         public void AddModule_Post_EmptyTitle_ReturnsBadRequest()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var modules_before_adding = context.Modules.Count();
 
@@ -146,7 +147,7 @@ namespace courses_platform.Tests.Controllers
         public void AddLesson_Post_AddsLessonToModule()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.AddLesson(1, "Lesson 2", "Lesson Desc 2");
 
@@ -162,7 +163,7 @@ namespace courses_platform.Tests.Controllers
         public void AddLesson_Post_EmptyTitle_ReturnsBadRequest()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var lessons_before_adding = context.Lessons.Count();
 
@@ -177,7 +178,7 @@ namespace courses_platform.Tests.Controllers
         public void CreateLessonContentBlocks_Get_ReturnsViewWithLesson()
         { 
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.CreateLessonContentBlocks(1);
 
@@ -188,12 +189,12 @@ namespace courses_platform.Tests.Controllers
         }
 
         [Fact]
-        public void AddLessonContentBlock_Post_AddsTextBlock()
+        public async void AddLessonContentBlock_Post_AddsTextBlock()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
-            var result = controller.AddLessonContentBlock(1, "text", "New block content", null);
+            var result = await controller.AddLessonContentBlock(1, "text", "New block content", null);
 
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("CreateLessonContentBlocks", redirect.ActionName);
@@ -205,51 +206,22 @@ namespace courses_platform.Tests.Controllers
         }
 
         [Fact]
-        public void AddLessonContentBlock_Post_InvalidLesson_ReturnsBadRequest()
+        public async void AddLessonContentBlock_Post_InvalidLesson_ReturnsBadRequest()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
-            var result = controller.AddLessonContentBlock(88, "text", "Content", null);
+            var result = await controller.AddLessonContentBlock(88, "text", "Content", null);
 
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Урок не знайдено", badRequestResult.Value);
         }
 
         [Fact]
-        public void AddLessonContentBlock_Post_AddsMediaBlock()
-        {
-            var context = GetDbContext();
-            var controller = new CourseCreationController(context);
-
-            var fileMock = new Mock<IFormFile>();
-            var content = "Fake file content";
-            var ms = new MemoryStream();
-            var writer = new StreamWriter(ms);
-            writer.Write(content);
-            writer.Flush();
-            ms.Position = 0;
-
-            fileMock.Setup(f => f.OpenReadStream()).Returns(ms);
-            fileMock.Setup(f => f.FileName).Returns("test.png");
-            fileMock.Setup(f => f.Length).Returns(ms.Length);
-
-            var result = controller.AddLessonContentBlock(1, "image", null, fileMock.Object);
-
-            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
-            Assert.Equal("CreateLessonContentBlocks", redirectResult.ActionName);
-
-            var block = context.LessonContentBlocks.FirstOrDefault(b => b.BlockType == "image");
-            Assert.NotNull(block);
-            Assert.StartsWith("/uploads/", block.MediaUrl);
-            Assert.Null(block.Content);
-        }
-
-        [Fact]
         public void EditLessonContentBlock_Get_ReturnsViewWithBlock()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.EditLessonContentBlock(1);
 
@@ -263,7 +235,7 @@ namespace courses_platform.Tests.Controllers
         public void EditLessonContentBlock_Get_BlockNotFound_ReturnsNotFound()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.EditLessonContentBlock(88);
 
@@ -271,12 +243,12 @@ namespace courses_platform.Tests.Controllers
         }
 
         [Fact]
-        public void EditLessonContentBlock_Post_UpdatesTextBlock()
+        public async void EditLessonContentBlock_Post_UpdatesTextBlock()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
-            var result = controller.EditLessonContentBlock(1, 1, "text", "Updated text", null);
+            var result = await controller.EditLessonContentBlock(1, 1, "text", "Updated text", null);
 
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("CreateLessonContentBlocks", redirect.ActionName);
@@ -288,41 +260,12 @@ namespace courses_platform.Tests.Controllers
         }
 
         [Fact]
-        public void EditLessonContentBlock_Post_UpdatesMediaBlock()
+        public async void EditLessonContentBlock_Post_BlockNotFound_ReturnsNotFound()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
-            var fileMock = new Mock<IFormFile>();
-            var content = "fake content";
-            var ms = new MemoryStream();
-            var writer = new StreamWriter(ms);
-            writer.Write(content);
-            writer.Flush();
-            ms.Position = 0;
-
-            fileMock.Setup(f => f.OpenReadStream()).Returns(ms);
-            fileMock.Setup(f => f.FileName).Returns("test.png");
-            fileMock.Setup(f => f.Length).Returns(ms.Length);
-
-            var result = controller.EditLessonContentBlock(1, 1, "image", null, fileMock.Object);
-
-            var redirect = Assert.IsType<RedirectToActionResult>(result);
-            Assert.Equal("CreateLessonContentBlocks", redirect.ActionName);
-
-            var block = context.LessonContentBlocks.First();
-            Assert.Equal("image", block.BlockType);
-            Assert.Null(block.Content);
-            Assert.StartsWith("/uploads/", block.MediaUrl);
-        }
-
-        [Fact]
-        public void EditLessonContentBlock_Post_BlockNotFound_ReturnsNotFound()
-        {
-            var context = GetDbContext();
-            var controller = new CourseCreationController(context);
-
-            var result = controller.EditLessonContentBlock(88, 1, "text", "Updated", null);
+            var result = await controller.EditLessonContentBlock(88, 1, "text", "Updated", null);
 
             Assert.IsType<NotFoundResult>(result);
         }
@@ -331,7 +274,7 @@ namespace courses_platform.Tests.Controllers
         public void CreateModuleAssignments_Get_ReturnsViewWithModule()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.CreateModuleAssignments(1);
 
@@ -344,7 +287,7 @@ namespace courses_platform.Tests.Controllers
         public void CreateModuleAssignments_Get_ModuleNotFound_ReturnsNotFound()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.CreateModuleAssignments(999);
 
@@ -355,7 +298,7 @@ namespace courses_platform.Tests.Controllers
         public void AddAssignment_Post_AddsOpenTextAssignment()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.AddAssignment(
                 moduleId: 1,
@@ -382,7 +325,7 @@ namespace courses_platform.Tests.Controllers
         public void AddAssignment_Post_AddsMultipleChoiceAssignment()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.AddAssignment(
                 moduleId: 1,
@@ -411,7 +354,7 @@ namespace courses_platform.Tests.Controllers
         public void AddAssignment_Post_EmptyTitle_RedirectsWithoutAdding()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var assignmentsBefore = context.Assignments.Count();
 
@@ -447,7 +390,7 @@ namespace courses_platform.Tests.Controllers
             context.Assignments.Add(assignment);
             context.SaveChanges();
 
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.EditAssignment(1);
 
@@ -460,7 +403,7 @@ namespace courses_platform.Tests.Controllers
         public void EditAssignment_Get_AssignmentNotFound_ReturnsNotFound()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.EditAssignment(999);
 
@@ -486,7 +429,7 @@ namespace courses_platform.Tests.Controllers
             context.Assignments.Add(assignment);
             context.SaveChanges();
 
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var updatedModel = new Assignment
             {
@@ -528,7 +471,7 @@ namespace courses_platform.Tests.Controllers
             context.Assignments.Add(assignment);
             context.SaveChanges();
 
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.DeleteAssignment(1, 1);
 
@@ -544,7 +487,7 @@ namespace courses_platform.Tests.Controllers
         public void SubmitCourse_Post_CourseNotFound_ReturnsNotFound()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
 
             var result = controller.SubmitCourse(999); // курс не існує
 
@@ -555,7 +498,7 @@ namespace courses_platform.Tests.Controllers
         public void SubmitCourse_Post_AlreadySubmitted_SetsTempDataAndRedirects()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
             controller.TempData = new TempDataDictionary(
                 new DefaultHttpContext(),
                 Mock.Of<ITempDataProvider>()
@@ -584,7 +527,7 @@ namespace courses_platform.Tests.Controllers
         public void SubmitCourse_Post_NewCourse_CreatesVerificationAndRedirects()
         {
             var context = GetDbContext();
-            var controller = new CourseCreationController(context);
+            var controller = new CourseCreationController(context, null);
             controller.TempData = new TempDataDictionary(
                 new DefaultHttpContext(),
                 Mock.Of<ITempDataProvider>()

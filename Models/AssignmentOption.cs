@@ -11,11 +11,11 @@ namespace courses_platform.Models
         [ForeignKey("Assignment")]
         public int AssignmentId { get; set; }
 
-        public string Text { get; set; }
+        [Required, MaxLength(1000)]
+        public string Text { get; set; } = null!;
 
         public bool IsCorrect { get; set; }
 
-
-        public Assignment Assignment { get; set; }
+        public Assignment Assignment { get; set; } = null!;
     }
 }
