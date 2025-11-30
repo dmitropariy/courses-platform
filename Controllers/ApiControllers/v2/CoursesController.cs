@@ -1,10 +1,11 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using courses_platform.Contexts;
+using courses_platform.Models;
+using courses_platform.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using courses_platform.Contexts;
-using courses_platform.Models;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace courses_platform.Controllers.ApiControllers.V2
 {
@@ -59,12 +60,47 @@ namespace courses_platform.Controllers.ApiControllers.V2
             return Ok(course);
         }
 
-        [HttpPost]
-        public async Task<ActionResult<Course>> PostCourse(Course course)
+        [HttpGet("simpleCourses")]
+        public async Task<ActionResult<IEnumerable<CourseDto>>> GetSimpleCourses()
         {
+            var coursesDto = await _context.Courses
+                .Select(c => new CourseDto
+                {
+                    Title = c.Title,
+                    Description = c.Description,
+                    CompletedCount = c.CompletedCount
+                })
+                .ToListAsync();
+
+            return Ok(coursesDto);
+        }
+
+
+        [HttpPost]
+        public async Task<ActionResult<Course>> PostCourse(CreateCourseDto dto)
+        {
+            var course = new Course
+            {
+                Title = dto.Title,
+                Description = dto.Description,
+                CompletedCount = 0,
+                Modules = dto.Modules.Select(m => new Module
+                {
+                    Title = m.Title,
+                    ModuleDescription = m.ModuleDescription,
+                    OrderNumber = m.OrderNumber,
+                    Lessons = m.Lessons.Select(l => new Lesson
+                    {
+                        Title = l.Title,
+                        LessonDescription = l.LessonDescription,
+                        OrderNumber = l.OrderNumber
+                    }).ToList()
+                }).ToList()
+            };
+
             _context.Courses.Add(course);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetCourse), new { id = course.CourseId }, course);
+            return CreatedAtAction(nameof(GetCourse), new { id = course.CourseId }, dto);
         }
 
         [HttpPut("{id}")]

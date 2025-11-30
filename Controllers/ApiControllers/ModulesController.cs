@@ -45,7 +45,6 @@ namespace courses_platform.Controllers.ApiControllers
         }
 
         // PUT: api/Modules/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutModule(int id, Module @module)
         {
@@ -76,7 +75,6 @@ namespace courses_platform.Controllers.ApiControllers
         }
 
         // POST: api/Modules
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Module>> PostModule(Module @module)
         {

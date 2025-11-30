@@ -20,6 +20,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 var provider = builder.Configuration.GetValue<string>("DatabaseProvider")?.ToLower();
 
+Console.WriteLine($"Using database provider: {provider}");
+
 var sqlServerConn = builder.Configuration.GetConnectionString("SqlServerConnection");
 var postgreConn = builder.Configuration.GetConnectionString("PostgreSQLConnection");
 var sqliteConn = builder.Configuration.GetConnectionString("SQLiteConnection");
@@ -159,23 +161,21 @@ builder.Services.AddAuthentication(options =>
 
 
 });
-// Add versioning
+
 builder.Services.AddApiVersioning(opt =>
 {
     opt.DefaultApiVersion = new ApiVersion(2, 0);
     opt.AssumeDefaultVersionWhenUnspecified = true;
-    opt.ReportApiVersions = true; // Adds headers like api-supported-versions
-    opt.ApiVersionReader = new UrlSegmentApiVersionReader(); // /v{version}/controller
+    opt.ReportApiVersions = true; 
+    opt.ApiVersionReader = new UrlSegmentApiVersionReader(); // /api/v{version}/[controller] instead of ?api-version=version
 });
 
-// Add versioned API explorer for Swagger
 builder.Services.AddVersionedApiExplorer(opt =>
 {
-    opt.GroupNameFormat = "'v'VVV"; // e.g., v1, v2
+    opt.GroupNameFormat = "'v'VVV"; // v1, v2, etc.
     opt.SubstituteApiVersionInUrl = true;
 });
 
-// Add Swagger and bind it to the versioned explorer
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddSwaggerGen();
 
@@ -189,12 +189,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Swagger UI with support for multiple versions
 var apiVersionDescriptionProvider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
-foreach (var desc in apiVersionDescriptionProvider.ApiVersionDescriptions)
-{
-    Console.WriteLine(desc.GroupName); // should print v1, v2
-}
 
 app.UseSwagger();
 app.UseSwaggerUI(options =>
