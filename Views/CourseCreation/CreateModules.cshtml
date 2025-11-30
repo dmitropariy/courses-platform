@@ -6,136 +6,204 @@
 
 <h2 class="mb-4">Прекрасно! Створимо модулі для курсу: <strong>@Model.Title</strong></h2>
 
-<!-- ---------- Додавання нового модуля ---------- -->
-<div class="card mb-4 p-3 shadow-sm">
-    <h4>Додати новий модуль</h4>
-    <div class="mb-2">
-        <input type="text" id="moduleTitle" class="form-control" placeholder="Назва модуля" />
-    </div>
-    <div class="mb-2">
-        <input type="text" id="moduleDescription" class="form-control" placeholder="Опис модуля" />
-    </div>
-    <button id="addModuleBtn" class="btn btn-success">Додати модуль</button>
-</div>
-
-<!-- ---------- Список модулів ---------- -->
-<div id="modulesList">
-    @foreach (var m in Model.Modules.OrderBy(x => x.OrderNumber))
-    {
-        <div class="card mb-3 shadow-sm p-3" data-module-id="@m.ModuleId">
-            <h5>@m.OrderNumber - @m.Title</h5>
-            <p>@m.ModuleDescription</p>
-
-            <!-- ---------- Додавання уроку ---------- -->
-            <div class="mb-3">
-                <h6>Додати урок</h6>
-                <input type="text" class="lessonTitle form-control mb-2" placeholder="Назва уроку" />
-                <input type="text" class="lessonDescription form-control mb-2" placeholder="Опис уроку" />
-                <button class="addLessonBtn btn btn-primary">Додати урок</button>
-            </div>
-
-            <!-- ---------- Список уроків ---------- -->
-            <div class="lessons" id="lessons-@m.ModuleId">
-                @foreach (var l in m.Lessons.OrderBy(x => x.OrderNumber))
-                {
-                    <div class="border p-2 mb-2 rounded bg-light">
-                        <p><strong>@l.OrderNumber - @l.Title</strong></p>
-                        <p>@l.LessonDescription</p>
-                        <form action="/CourseCreation/CreateLessonContentBlocks" method="get">
-                            <input type="hidden" name="lessonId" value="@l.LessonId" />
-                            <button type="submit" class="btn btn-secondary btn-sm">Заповнити матеріал уроку</button>
-                        </form>
-                    </div>
-                }
-            </div>
-
-            <!-- ---------- Редагування тестового завдання ---------- -->
-            <div>
-                <form action="/CourseCreation/CreateModuleAssignments" method="get">
-                    <input type="hidden" name="moduleId" value="@m.ModuleId" />
-                    <button type="submit" class="btn btn-success btn-sm mt-2">Редагувати тестове завдання</button>
-                </form>
-            </div>
-        </div>
-    }
-</div>
-
-<!-- ---------- Надіслати курс на публікацію ---------- -->
-<div class="mt-4">
-    <form action="/CourseCreation/SubmitCourse" method="post">
-        <input type="hidden" name="courseId" value="@Model.CourseId" />
-        <button type="submit" class="btn btn-success btn-lg">Надіслати заявку на публікацію курсу</button>
-    </form>
-</div>
+<div id="courseModulesApp"></div>
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(function () {
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@@babel/standalone/babel.min.js"></script>
 
-            // ---------- Додавання модуля ----------
-            $('#addModuleBtn').click(function () {
-                var title = $('#moduleTitle').val();
-                var description = $('#moduleDescription').val();
-                var courseId = @Model.CourseId;
+    <script type="text/babel">
+        const { useState } = React;
 
-                $.post('@Url.Action("AddModule", "CourseCreation")',
-                    { courseId: courseId, title: title, description: description },
-                    function (data) {
-                        if (data.success) {
-                            $('#modulesList').append(
-                                `<div class="card mb-3 shadow-sm p-3" data-module-id="${data.moduleId}">
-                                            <h5>${data.orderNumber} - ${data.title}</h5>
-                                            <p>${data.description}</p>
-                                            <div class="mb-3">
-                                                <h6>Додати урок</h6>
-                                                <input type="text" class="lessonTitle form-control mb-2" placeholder="Назва уроку" />
-                                                <input type="text" class="lessonDescription form-control mb-2" placeholder="Опис уроку" />
-                                                <button class="addLessonBtn btn btn-primary">Додати урок</button>
-                                            </div>
-                                            <div class="lessons" id="lessons-${data.moduleId}"></div>
-                                            <div>
-                                                <form action="/CourseCreation/CreateModuleAssignments" method="get">
-                                                    <input type="hidden" name="moduleId" value="${data.moduleId}" />
-                                                    <button type="submit" class="btn btn-success btn-sm mt-2">Редагувати тестове завдання</button>
-                                                </form>
-                                            </div>
-                                        </div>`
-                            );
-                            $('#moduleTitle').val('');
-                            $('#moduleDescription').val('');
-                        }
-                    });
-            });
+        function CourseModules({ course }) {
+            const [modules, setModules] = useState([]);
+            const [newModuleTitle, setNewModuleTitle] = useState('');
+            const [newModuleDescription, setNewModuleDescription] = useState('');
 
-            // ---------- Додавання уроку ----------
-            $(document).on('click', '.addLessonBtn', function () {
-                var parentCard = $(this).closest('.card');
-                var moduleId = parentCard.data('module-id');
-                var title = parentCard.find('.lessonTitle').val();
-                var description = parentCard.find('.lessonDescription').val();
+            React.useEffect(() => {
+                async function loadModules() {
+                    const res = await fetch(`/CourseCreation/GetModules?courseId=${course.CourseId}`);
+                    const data = await res.json();
+                    setModules(data.sort((a, b) => a.orderNumber - b.orderNumber));
+                }
+                loadModules();
+            }, [course.CourseId]);
 
-                $.post('@Url.Action("AddLesson", "CourseCreation")',
-                    { moduleId: moduleId, title: title, lessonDescription: description },
-                    function (data) {
-                        if (data.success) {
-                            parentCard.find('.lessons').append(`
-                                        <div class="border p-2 mb-2 rounded bg-light">
-                                            <p><strong>${data.orderNumber} - ${data.title}</strong></p>
-                                            <p>${data.description}</p>
-                                            <form action="/CourseCreation/CreateLessonContentBlocks" method="get">
-                                                <input type="hidden" name="lessonId" value="${data.lessonId}" />
-                                                <button type="submit" class="btn btn-secondary btn-sm">Заповнити матеріал уроку</button>
-                                            </form>
-                                        </div>`
-                            );
+            const addModule = async () => {
+                if (!newModuleTitle.trim() || !newModuleDescription.trim()) {
+                    alert('Назва та опис модуля не можуть бути порожніми.');
+                    return;
+                }
 
-                            parentCard.find('.lessonTitle').val('');
-                            parentCard.find('.lessonDescription').val('');
-                        }
-                    });
-            });
+                console.log("CourseId:", course.CourseId);
+                const formData = new FormData();
+                formData.append('courseId', course.CourseId);
+                formData.append('title', newModuleTitle);
+                formData.append('description', newModuleDescription);
 
-        });
+                const res = await fetch('@Url.Action("AddModule", "CourseCreation")', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    setModules(prev => [...prev, {
+                        moduleId: data.moduleId,
+                        title: data.title,
+                        moduleDescription: data.description,
+                        orderNumber: data.orderNumber,
+                        lessons: []
+                    }]);
+                    setNewModuleTitle('');
+                    setNewModuleDescription('');
+                }
+            };
+
+            const addLesson = async (moduleId, title, description, resetInputs) => {
+                if (!title.trim() || !description.trim()) {
+                    alert('Назва та опис уроку не можуть бути порожніми.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('moduleId', moduleId);
+                formData.append('title', title);
+                formData.append('lessonDescription', description);
+
+                const res = await fetch('@Url.Action("AddLesson", "CourseCreation")', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    setModules(prev =>
+                        prev.map(m =>
+                            m.moduleId === moduleId
+                                ? { ...m, lessons: [...m.lessons, { lessonId: data.lessonId, title: data.title, lessonDescription: data.description, orderNumber: data.orderNumber }] }
+                                : m
+                        )
+                    );
+                    resetInputs();
+                }
+            };
+
+            return (
+                <div>
+                    {/* Add Module */}
+                    <div className="card mb-4 p-3 shadow-sm">
+                        <h4>Додати новий модуль</h4>
+                        <input
+                            type="text"
+                            className="form-control mb-2"
+                            placeholder="Назва модуля"
+                            value={newModuleTitle}
+                            onChange={e => setNewModuleTitle(e.target.value)}
+                        />
+                        <input
+                            type="text"
+                            className="form-control mb-2"
+                            placeholder="Опис модуля"
+                            value={newModuleDescription}
+                            onChange={e => setNewModuleDescription(e.target.value)}
+                        />
+                        <button className="btn btn-success" onClick={addModule}>Додати модуль</button>
+                    </div>
+
+                    {/* Modules List */}
+                    {modules.map(m => (
+                        <ModuleCard key={m.moduleId} module={m} addLesson={addLesson} />
+                    ))}
+
+                    {/* Submit Course */}
+                    <div className="mt-4">
+                        <form action="/CourseCreation/SubmitCourse" method="post">
+                            <input type="hidden" name="courseId" value={course.CourseId} />
+                            <button type="submit" className="btn btn-success btn-lg">Надіслати заявку на публікацію курсу</button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        function ModuleCard({ module, addLesson }) {
+            const [lessonTitle, setLessonTitle] = useState('');
+            const [lessonDescription, setLessonDescription] = useState('');
+
+            const handleAddLesson = () => {
+                addLesson(module.moduleId, lessonTitle, lessonDescription, () => {
+                    setLessonTitle('');
+                    setLessonDescription('');
+                });
+            };
+
+            return (
+                <div className="card mb-3 shadow-sm p-3">
+                    <h5>{module.orderNumber} - {module.title}</h5>
+                    <p>{module.moduleDescription}</p>
+
+                    {/* Add Lesson */}
+                    <div className="mb-3">
+                        <h6>Додати урок</h6>
+                        <input
+                            type="text"
+                            className="form-control mb-2"
+                            placeholder="Назва уроку"
+                            value={lessonTitle}
+                            onChange={e => setLessonTitle(e.target.value)}
+                        />
+                        <input
+                            type="text"
+                            className="form-control mb-2"
+                            placeholder="Опис уроку"
+                            value={lessonDescription}
+                            onChange={e => setLessonDescription(e.target.value)}
+                        />
+                        <button className="btn btn-primary" onClick={handleAddLesson}>Додати урок</button>
+                    </div>
+
+                    {/* Lessons List */}
+                    <div>
+                        {module.lessons.sort((a, b) => a.orderNumber - b.orderNumber).map(l => (
+                            <div key={l.lessonId} className="border p-2 mb-2 rounded bg-light">
+                                <p><strong>{l.orderNumber} - {l.title}</strong></p>
+                                <p>{l.lessonDescription}</p>
+                                <form action="/CourseCreation/CreateLessonContentBlocks" method="get">
+                                    <input type="hidden" name="lessonId" value={l.lessonId} />
+                                    <button type="submit" className="btn btn-secondary btn-sm">Заповнити матеріал уроку</button>
+                                </form>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Edit module assignments */}
+                    <form action="/CourseCreation/CreateModuleAssignments" method="get">
+                        <input type="hidden" name="moduleId" value={module.moduleId} />
+                        <button type="submit" className="btn btn-success btn-sm mt-2">Редагувати тестове завдання</button>
+                    </form>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('courseModulesApp')).render(
+            <CourseModules course={@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+                CourseId = Model.CourseId,
+                Title = Model.Title,
+                Modules = Model.Modules.Select(m => new {
+                    m.ModuleId,
+                    m.Title,
+                    ModuleDescription = m.ModuleDescription,
+                    OrderNumber = m.OrderNumber,
+                    Lessons = m.Lessons.Select(l => new {
+                        l.LessonId,
+                        l.Title,
+                        LessonDescription = l.LessonDescription,
+                        l.OrderNumber
+                    }).ToList()
+                }).ToList()
+            }))} />
+        );
     </script>
 }

@@ -1,60 +1,131 @@
-﻿@model List<courses_platform.Models.CourseVerification>
+﻿@using System.Text.Json
 @{
     ViewData["Title"] = "Заявки на курси";
 }
 
-<!-- Ця сторінка:
-   Таблиця із усіх заявок на курси в системі, із можливістю пошуку по назві та автору або айді.
-   Вивід - лише айді + назва курсу + автор курсу + Кнопка "деталі", без деталей на цій .
-   Можливість з цієї сторінки перейти на іншу, більш детальну для конкретної заявки (кнопка деталей).
- -->
-
 <h2>Заявки на курси</h2>
 
-<form method="get" class="mb-3">
-    <input type="text" name="search" value="@ViewBag.Search" placeholder="Пошук по назві, автору або ID" class="form-control" />
-    <button type="submit" class="btn btn-primary mt-2">Пошук</button>
-</form>
+<div id="courseVerificationsApp"></div>
 
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Назва курсу</th>
-            <th>Дії</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var v in Model)
-        {
-            <tr>
-                <td>@v.VerificationId</td>
-                <td>@v.Course.Title</td>
-                <td>
-                    <a class="btn btn-info btn-sm" href="@Url.Action("CourseDetails", new { verificationId = v.VerificationId })">Деталі</a>
-                </td>
-            </tr>
+@section Scripts {
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function CourseVerifications() {
+            const [search, setSearch] = useState('');
+            const [results, setResults] = useState([]);
+            const [currentPage, setCurrentPage] = useState(1);
+            const [totalPages, setTotalPages] = useState(1);
+            const [loading, setLoading] = useState(false);
+
+            const fetchData = async (page = 1) => {
+                setLoading(true);
+                try {
+                    const params = new URLSearchParams({ search, page });
+                    const res = await fetch('/CourseVerification/VerificationPanelAjax?' + params.toString());
+                    if (!res.ok) throw new Error('Network response was not ok');
+                    const data = await res.json();
+                    setResults(data.items);
+                    setCurrentPage(data.currentPage);
+                    setTotalPages(data.totalPages);
+                } catch (err) {
+                    alert('Помилка завантаження даних');
+                    console.error(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleSearchSubmit = (e) => {
+                e.preventDefault();
+                fetchData(1);
+            };
+
+            const handlePageClick = (page) => {
+                fetchData(page);
+            };
+
+            useEffect(() => {
+                fetchData(currentPage);
+            }, []);
+
+            return (
+                <div>
+                    <form onSubmit={handleSearchSubmit} className="mb-3">
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Пошук по назві, автору або ID"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                        <button type="submit" className="btn btn-primary mt-2">Пошук</button>
+                    </form>
+
+                    {loading ? (
+                        <div className="text-center my-5">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Завантаження...</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <table className="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Назва курсу</th>
+                                        <th>Дії</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {results.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="3" className="text-center">Записів не знайдено</td>
+                                        </tr>
+                                    ) : (
+                                        results.map(v => (
+                                            <tr key={v.verificationId}>
+                                                <td>{v.verificationId}</td>
+                                                <td>{v.courseTitle}</td>
+                                                <td>
+                                                    <a
+                                                        className="btn btn-info btn-sm"
+                                                        href={`/CourseVerification/CourseDetails?verificationId=${v.verificationId}`}
+                                                    >
+                                                        Деталі
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+
+                            <nav aria-label="Page navigation">
+                                <ul className="pagination justify-content-center">
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(i => (
+                                        <li key={i} className={`page-item ${i === currentPage ? 'active' : ''}`}>
+                                            <button
+                                                className="page-link"
+                                                onClick={() => handlePageClick(i)}
+                                            >
+                                                {i}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </nav>
+                        </>
+                    )}
+                </div>
+            );
         }
-    </tbody>
-</table>
 
-<nav aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
-        @for (int i = 1; i <= ViewBag.TotalPages; i++)
-        {
-            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
-                <a class="page-link" href="@Url.Action("Index", new { search = ViewBag.Search, page = i })">@i</a>
-            </li>
-        }
-    </ul>
-</nav>
-
-
-<!-- Сторінка деталі уроку:
-    Вивід інформації про урок: Назва
-
-    Далі - Вивід усіх матеріалів у уроці циклом поблоково, виведення в залежності від типу медіа: текст, картинка, відео
-
-    Кнопка повернутись назад
--->
-
+        ReactDOM.createRoot(document.getElementById('courseVerificationsApp')).render(<CourseVerifications />);
+    </script>
+}
