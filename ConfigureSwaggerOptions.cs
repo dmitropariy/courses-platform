@@ -26,14 +26,6 @@ namespace courses_platform
                     Description = $"API Version {desc.ApiVersion}"
                 });
             }
-
-            //options.DocInclusionPredicate((docName, apiDesc) =>
-            //{
-            //    var model = apiDesc.ActionDescriptor?.GetApiVersionModel();
-            //    if (model == null) return false;
-            //    return model.DeclaredApiVersions.Any(v => $"v{v}" == docName) ||
-            //           model.ImplementedApiVersions.Any(v => $"v{v}" == docName);
-            //});
         }
     }
 }
