@@ -1,0 +1,9 @@
+﻿scrape_configs:
+  - job_name: 'aspnetcore'
+    static_configs:
+      - targets: ['host.docker.internal:5001']
+    metrics_path: /metrics
+
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:9464']
