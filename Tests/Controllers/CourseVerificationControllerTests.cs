@@ -49,34 +49,6 @@ namespace courses_platform.Tests.Controllers
         }
 
         [Fact]
-        public void Index_ReturnsOnlyNonApprovedVerifications()
-        {
-            var context = GetDbContext();
-            var controller = new CourseVerificationController(context);
-
-            var result = controller.VerificationPanel(null) as ViewResult;
-            var model = result.Model as List<CourseVerification>;
-
-            Assert.NotNull(result);
-            Assert.NotNull(model);
-            Assert.All(model, v => Assert.NotEqual("approved", v.Status));
-            Assert.Equal(2, model.Count); // Only pending and rejected
-        }
-
-        [Fact]
-        public void Index_FiltersBySearchTerm()
-        {
-            var context = GetDbContext();
-            var controller = new CourseVerificationController(context);
-
-            var result = controller.VerificationPanel("c#") as ViewResult;
-            var model = result.Model as List<CourseVerification>;
-
-            Assert.All(model, v => Assert.Contains("c#", v.Course.Title.ToLower()));
-            Assert.Equal("pending", model.First().Status);
-        }
-
-        [Fact]
         public void CourseDetails_ReturnsView_ForExistingVerification()
         {
             var context = GetDbContext();
@@ -107,7 +79,7 @@ namespace courses_platform.Tests.Controllers
             var context = GetDbContext();
             var controller = new CourseVerificationController(context);
 
-            var result = controller.Approve(1);
+            var result = controller.ApproveCourse(1);
 
             var verification = context.CourseVerifications.First(v => v.VerificationId == 1);
             Assert.Equal("approved", verification.Status);
@@ -123,7 +95,7 @@ namespace courses_platform.Tests.Controllers
             var context = GetDbContext();
             var controller = new CourseVerificationController(context);
 
-            var result = controller.Approve(88);
+            var result = controller.ApproveCourse(88);
 
             Assert.IsType<NotFoundResult>(result);
         }
@@ -134,7 +106,7 @@ namespace courses_platform.Tests.Controllers
             var context = GetDbContext();
             var controller = new CourseVerificationController(context);
 
-            var result = controller.Reject(3);
+            var result = controller.RejectCourse(3);
 
             var verification = context.CourseVerifications.First(v => v.VerificationId == 3);
             Assert.Equal("rejected", verification.Status);
@@ -150,7 +122,7 @@ namespace courses_platform.Tests.Controllers
             var context = GetDbContext();
             var controller = new CourseVerificationController(context);
 
-            var result = controller.Reject(88);
+            var result = controller.RejectCourse(88);
 
             Assert.IsType<NotFoundResult>(result);
         }

@@ -14,11 +14,16 @@ public class CourseVerificationController : Controller
         _context = context;
     }
 
-    // LAB3 : Додати пошук по імені автора курсу
-    // GET: Список всіх заявок
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public IActionResult VerificationPanel(string search, int page = 1)
+    public IActionResult VerificationPanel()
+    {
+        return View();
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public IActionResult VerificationPanelAjax(string search = "", int page = 1)
     {
         var query = _context.CourseVerifications
             .Include(v => v.Course)
@@ -38,14 +43,20 @@ public class CourseVerificationController : Controller
             .OrderByDescending(v => v.VerifiedAt)
             .Skip((page - 1) * PageSize)
             .Take(PageSize)
+            .Select(v => new {
+                verificationId = v.VerificationId,
+                courseTitle = v.Course.Title
+            })
             .ToList();
 
-        ViewBag.CurrentPage = page;
-        ViewBag.TotalPages = (int)Math.Ceiling(totalCount / (double)PageSize);
-        ViewBag.Search = search;
-
-        return View(verifications);
+        return Json(new
+        {
+            items = verifications,
+            currentPage = page,
+            totalPages = (int)Math.Ceiling(totalCount / (double)PageSize)
+        });
     }
+
 
     // GET: Деталі конкретної заявки
     [HttpGet]
@@ -65,7 +76,7 @@ public class CourseVerificationController : Controller
     // POST: Прийняти заявку
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public IActionResult Approve(int verificationId)
+    public IActionResult ApproveCourse(int verificationId)
     {
         var verification = _context.CourseVerifications
             .FirstOrDefault(v => v.VerificationId == verificationId);
@@ -76,13 +87,13 @@ public class CourseVerificationController : Controller
         verification.VerifiedAt = DateTime.Now;
         _context.SaveChanges();
 
-        return RedirectToAction("Index");
+        return RedirectToAction("VerificationPanel", "CourseVerification");
     }
 
     // POST: Відхилити заявку
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public IActionResult Reject(int verificationId)
+    public IActionResult RejectCourse(int verificationId)
     {
         var verification = _context.CourseVerifications
             .FirstOrDefault(v => v.VerificationId == verificationId);
@@ -93,7 +104,8 @@ public class CourseVerificationController : Controller
         verification.VerifiedAt = DateTime.Now;
         _context.SaveChanges();
 
-        return RedirectToAction("Index");
+
+        return RedirectToAction("VerificationPanel", "CourseVerification");
     }
 
     // GET: Перегляд деталей модуля (Уроки + Тестове завдання)

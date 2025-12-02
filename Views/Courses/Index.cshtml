@@ -1,9 +1,13 @@
 ﻿@model List<courses_platform.Models.Course>
+@using System.Text.Json
 @{
     ViewData["Title"] = "Усі курси";
 }
 
-<!-- Додати правильне посилання на сторінку енроллмент, додати ЛАБ 3 Правильне виведення автора та пошук за автором -->
+<h2>Найпопулярніші курси</h2>
+
+<div id="popularCoursesCarousel"></div>
+
 <h2>Усі підтверджені курси</h2>
 
 <form method="get" class="mb-4">
@@ -37,9 +41,46 @@
     </ul>
 </nav>
 
-<!-- Ця сторінка:
-   Список усіх курсів в системі. Вони мають бути підтвердженими. (у таблиці CourseVerification status = approved)
-   Виведення - Назва, короткий опис, автор, кнопка "Записатись на курс" - перехід на сторінку Енроллмент, її поки немає. Формат - типу як блоки а не таблиця.
-   Можливість пошуку по назві та автору (в одному полі, але шукає по двох)
-   Пагінація: 10 курсів на сторінку
- -->
+@section Scripts {
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function PopularCourses({ courses }) {
+            const [startIndex, setStartIndex] = useState(0);
+            const visibleCount = 3;
+
+            const handlePrev = () => setStartIndex(Math.max(startIndex - 1, 0));
+            const handleNext = () => setStartIndex(Math.min(startIndex + 1, courses.length - visibleCount));
+
+            return (
+                <div className="d-flex align-items-center mb-4">
+                    <button className="btn btn-secondary me-2" onClick={handlePrev} disabled={startIndex === 0}>‹</button>
+
+                    <div className="d-flex flex-grow-1 overflow-hidden">
+                        {courses.slice(startIndex, startIndex + visibleCount).map(c => (
+                            <div key={c.CourseId} className="card me-3 flex-shrink-0" style={{ width: '18rem' }}>
+                                <div className="card-body d-flex flex-column">
+                                    <h5 className="card-title">{c.Title}</h5>
+                                    <p className="card-text">{c.Description}</p>
+                                    <p className="card-text">Вже пройшли: {c.CompletedCount}</p>
+                                    <a href={`/Enrollment/Enroll?courseId=${c.CourseId}`} className="btn btn-success mt-auto">Записатись</a>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button className="btn btn-secondary ms-2" onClick={handleNext} disabled={startIndex >= courses.length - visibleCount}>›</button>
+                </div>
+            );
+        }
+
+        const popularCourses = @Html.Raw(JsonSerializer.Serialize(ViewBag.PopularCourses));
+
+        ReactDOM.createRoot(document.getElementById('popularCoursesCarousel'))
+            .render(<PopularCourses courses={popularCourses} />);
+    </script>
+}
