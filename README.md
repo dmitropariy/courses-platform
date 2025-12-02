@@ -1,3 +1,8 @@
+# Посилання на репозиторії в яких виконувались частини інших лабораторних:
+- Авторизаційний сервер Duende Identity Server: https://github.com/laylin41/AuthServerCourses-Platform
+- Jest тестування API: https://github.com/laylin41/Testing_Courses-Platform
+- MAUI застосунок (лаб 7): https://github.com/laylin41/MauiAppCoursesPlatform
+
 # Загальний огляд проекту
 Проект являє собою онлайн-платформу для створення, публікації та проходження навчальних курсів.
 Він дозволяє:
