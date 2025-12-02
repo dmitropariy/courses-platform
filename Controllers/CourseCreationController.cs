@@ -59,6 +59,31 @@ namespace courses_platform.Controllers
             return View(course);
         }
 
+        [HttpGet]
+        public IActionResult GetModules(int courseId)
+        {
+            var modules = _context.Modules
+                .Where(m => m.CourseId == courseId)
+                .Include(m => m.Lessons)
+                .OrderBy(m => m.OrderNumber)
+                .Select(m => new {
+                    m.ModuleId,
+                    m.Title,
+                    ModuleDescription = m.ModuleDescription,
+                    OrderNumber = m.OrderNumber,
+                    Lessons = m.Lessons.Select(l => new {
+                        l.LessonId,
+                        l.Title,
+                        l.LessonDescription,
+                        l.OrderNumber
+                    })
+                })
+                .ToList();
+
+            return Json(modules);
+        }
+
+
         // POST: Створення модуля
         [HttpPost]
         [Authorize(Roles = "Professor")]

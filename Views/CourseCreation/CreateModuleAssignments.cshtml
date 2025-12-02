@@ -46,6 +46,13 @@
 
 <hr />
 
+<a href="@Url.Action("CreateModules", "CourseCreation", new { courseId = Model.CourseId })"
+   class="btn btn-secondary">
+    На попередню сторінку
+</a>
+
+<hr />
+
 <h4>Усі питання модуля:</h4>
 
 @if (Model.Assignments.Any())

@@ -27,8 +27,7 @@ namespace courses_platform.Controllers
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.Trim().ToLower();
-                query = query.Where(c =>
-                    c.Title.ToLower().Contains(search));
+                query = query.Where(c => c.Title.ToLower().Contains(search));
             }
 
             var totalCourses = query.Count();
@@ -38,12 +37,27 @@ namespace courses_platform.Controllers
                 .Take(PageSize)
                 .ToList();
 
+            var popularCourses = _context.Courses
+                .Where(c => c.Verifications.Any(v => v.Status == "approved"))
+                .OrderByDescending(c => c.CompletedCount)
+                .Take(6)
+                .Select(c => new
+                {
+                    c.CourseId,
+                    c.Title,
+                    c.Description,
+                    c.CompletedCount
+                })
+                .ToList();
+
+            ViewBag.PopularCourses = popularCourses;
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = (int)Math.Ceiling(totalCourses / (double)PageSize);
             ViewBag.Search = search;
 
             return View(courses);
         }
+
 
         public IActionResult OldCourses()
         { 

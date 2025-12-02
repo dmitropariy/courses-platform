@@ -42,36 +42,25 @@ namespace courses_platform.Controllers
 
             ViewBag.AssignmentTypes = new List<SelectListItem>
             {
-                new() { Value = "", Text = "Усі типи" },
-                new() { Value = "quiz_single", Text = "Одиночний вибір" },
-                new() { Value = "quiz_multiple", Text = "Множинний вибір" },
-                new() { Value = "open_text", Text = "Відкрите питання" }
+                new SelectListItem { Value = "", Text = "Усі типи" },
+                new SelectListItem  { Value = "quiz_single", Text = "Одиночний вибір" },
+                new SelectListItem { Value = "quiz_multiple", Text = "Множинний вибір" },
+                new SelectListItem { Value = "open_text", Text = "Відкрите питання" }
             };
 
             return View(new SubmissionSearchModel());
         }
 
         [HttpPost]
-        public IActionResult Search(SubmissionSearchModel model, int page = 1)
+        public IActionResult SearchAjax(SubmissionSearchModel model)
         {
-            ViewBag.Courses = _db.Courses
-                                 .Select(c => new SelectListItem
-                                 {
-                                     Value = c.CourseId.ToString(),
-                                     Text = c.Title
-                                 }).ToList();
-            ViewBag.AssignmentTypes = new List<SelectListItem>
-            {
-                new() { Value = "", Text = "Усі типи" },
-                new() { Value = "quiz_single", Text = "Одиночний вибір" },
-                new() { Value = "quiz_multiple", Text = "Множинний вибір" },
-                new() { Value = "open_text", Text = "Відкрите питання" }
-            };
+            if (model == null)
+                return BadRequest("Model is null");
 
             IQueryable<Submission> query = _db.Submissions
                 .Include(s => s.Assignment)
-                .ThenInclude(a => a.Module)
-                .ThenInclude(m => m.Course);
+                    .ThenInclude(a => a.Module)
+                    .ThenInclude(m => m.Course);
 
             if (model.DateFrom.HasValue)
                 query = query.Where(s => s.GradedAt >= model.DateFrom);
@@ -80,7 +69,7 @@ namespace courses_platform.Controllers
 
             if (model.SelectedCourseIds != null && model.SelectedCourseIds.Any())
             {
-                var courseIds = model.SelectedCourseIds.Select(int.Parse);
+                var courseIds = model.SelectedCourseIds;
                 query = query.Where(s => courseIds.Contains(s.Assignment.Module.CourseId));
             }
 
@@ -88,33 +77,38 @@ namespace courses_platform.Controllers
                 query = query.Where(s => s.Assignment.Type == model.AssignmentType);
 
             if (!string.IsNullOrEmpty(model.AnswerPrefix))
-                query = query.Where(s => s.AnswerText != null && s.AnswerText.StartsWith(model.AnswerPrefix));
+            {
+                var prefix = model.AnswerPrefix.ToLower();
+                query = query.Where(s =>
+                    (s.AnswerText != null && s.AnswerText.ToLower().StartsWith(prefix)) ||
+                    (s.SelectedOptions != null && s.SelectedOptions.ToLower().StartsWith(prefix))
+                );
+            }
+
             if (!string.IsNullOrEmpty(model.AnswerSuffix))
-                query = query.Where(s => s.AnswerText != null && s.AnswerText.EndsWith(model.AnswerSuffix));
+            {
+                var suffix = model.AnswerSuffix.ToLower();
+                query = query.Where(s =>
+                    (s.AnswerText != null && s.AnswerText.ToLower().EndsWith(suffix)) ||
+                    (s.SelectedOptions != null && s.SelectedOptions.ToLower().EndsWith(suffix))
+                );
+            }
 
-            var total = query.Count();
+            var results = query
+                .OrderByDescending(s => s.GradedAt)
+                .Select(s => new SubmissionResultViewModel
+                {
+                    SubmissionId = s.SubmissionId,
+                    CourseTitle = s.Assignment.Module.Course.Title,
+                    ModuleTitle = s.Assignment.Module.Title,
+                    AssignmentTitle = s.Assignment.Title,
+                    AnswerText = s.AnswerText ?? s.SelectedOptions ?? "-",
+                    IsCorrect = s.IsCorrect,
+                    GradedAt = s.GradedAt
+                })
+                .ToList();
 
-            var results = query.OrderByDescending(s => s.GradedAt)
-                               .Skip((page - 1) * PageSize)
-                               .Take(PageSize)
-                               .Select(s => new SubmissionResultViewModel
-                               {
-                                   SubmissionId = s.SubmissionId,
-                                   CourseTitle = s.Assignment.Module.Course.Title,
-                                   ModuleTitle = s.Assignment.Module.Title,
-                                   AssignmentTitle = s.Assignment.Title,
-                                   AnswerText = s.AnswerText ?? s.SelectedOptions ?? "-",
-                                   IsCorrect = s.IsCorrect,
-                                   GradedAt = s.GradedAt
-                               })
-                               .ToList();
-
-            ViewBag.Results = results;
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = (total + PageSize - 1) / PageSize;
-            ViewBag.TotalCount = total;
-
-            return View(model);
+            return Json(results);
         }
     }
 }

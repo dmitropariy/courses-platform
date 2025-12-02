@@ -17,15 +17,7 @@
         @if (User.Identity?.IsAuthenticated == false)
         {
             <div class="d-flex justify-content-center gap-3">
-                <a asp-controller="Account" asp-action="ProfileLogin" asp-route-role="Professor"
-                   class="btn btn-primary btn-lg">
-                    <i class="bi bi-person-badge"></i> Увійти як професор
-                </a>
-
-                <a asp-controller="Account" asp-action="ProfileLogin" asp-route-role="Student"
-                   class="btn btn-success btn-lg">
-                    <i class="bi bi-person"></i> Увійти як студент
-                </a>
+                <div id="reactLoginButtons"></div>
             </div>
         }
     </div>
@@ -90,3 +82,88 @@
     </section>
 
 </div>
+
+@section Scripts {
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function AnimatedButton({ children, gradient, className, onClick }) {
+            const [hover, setHover] = useState(false);
+
+            const style = {
+                transform: hover ? 'scale(1.05)' : 'scale(1)',
+                transition: 'transform 0.2s',
+                cursor: 'pointer',
+                background: gradient,
+                backgroundSize: '800% 800%',
+                color: 'white',
+                border: 'none',
+                animation: 'gradientAnimation 10s ease infinite'
+            };
+
+            return (
+                <button
+                    className={className}
+                    style={style}
+                    onMouseEnter={() => setHover(true)}
+                    onMouseLeave={() => setHover(false)}
+                    onClick={onClick}
+                >
+                    {children}
+                </button>
+            );
+        }
+
+        function LoginButtons() {
+            const buttons = [
+                {
+                    role: "Professor",
+                    text: <><i className="bi bi-person-badge"></i> Увійти як професор</>,
+                    gradient: 'linear-gradient(270deg, #ff7e5f, #feb47b, #ff6a88, #ff99ac)',
+                    className: "btn btn-lg"
+
+                },
+                {
+                    role: "Student",
+                    text: <><i className="bi bi-person"></i> Увійти як студент</>,
+                    gradient: 'linear-gradient(270deg, #43cea2, #185a9d, #00c6ff, #0072ff)',
+                    className: "btn btn-lg"
+                }
+            ];
+
+            return (
+                <div className="d-flex justify-content-center gap-3">
+                    {buttons.map(b => (
+                        <AnimatedButton
+                            key={b.role}
+                            gradient={b.gradient}
+                            className={b.className}
+                            onClick={() => window.location.href = `/Account/ProfileLogin?role=${b.role}`}
+                        >
+                            {b.text}
+                        </AnimatedButton>
+                    ))}
+                </div>
+            );
+        }
+
+        const styleSheet = document.createElement("style");
+            styleSheet.type = "text/css";
+            styleSheet.innerText = `
+            @@keyframes gradientAnimation {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+            `;
+        document.head.appendChild(styleSheet);
+
+        ReactDOM.createRoot(document.getElementById('reactLoginButtons')).render(<LoginButtons />);
+    </script>
+
+
+}

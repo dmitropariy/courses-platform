@@ -22,7 +22,7 @@ namespace courses_platform.Services
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await _httpClient.GetAsync($"https://localhost:5000/api/users/{userId}");
+            var response = await _httpClient.GetAsync($"https://localhost:5005/api/users/{userId}");
             if (!response.IsSuccessStatusCode)
                 return null;
 
@@ -47,7 +47,7 @@ namespace courses_platform.Services
             if (model.PhotoFile != null)
                 content.Add(new StreamContent(model.PhotoFile.OpenReadStream()), "PhotoFile", model.PhotoFile.FileName);
 
-            var response = await _httpClient.PutAsync($"https://localhost:5000/api/users/{userId}", content);
+            var response = await _httpClient.PutAsync($"https://localhost:5005/api/users/{userId}", content);
 
             if (!response.IsSuccessStatusCode)
                 return null;
