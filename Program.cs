@@ -12,6 +12,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using CloudinaryDotNet;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -178,6 +183,52 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddControllersWithViews();
 
+var serviceName = "courses-platform";
+var serviceVersion = "1.0.0";
+
+builder.Logging.AddOpenTelemetry(options =>
+{
+    options
+        .SetResourceBuilder(
+            ResourceBuilder.CreateDefault().AddService(serviceName))
+        .AddOtlpExporter(otlpOptions =>
+        {
+            otlpOptions.Endpoint = new Uri("http://localhost:4317");
+        });
+});
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource
+        .AddService(serviceName, serviceVersion: serviceVersion))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddGrpcClientInstrumentation()
+        .AddOtlpExporter(otlpOptions =>
+        {
+            otlpOptions.Endpoint = new Uri("http://localhost:4317");
+        })
+        .AddZipkinExporter(zipkin =>
+        {
+            zipkin.Endpoint = new Uri("http://localhost:9411/api/v2/spans");
+        })
+    )
+ .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddProcessInstrumentation()
+        .AddMeter("Microsoft.Orleans")
+
+        // Prometheus exporter (scraping)
+        .AddPrometheusExporter()
+
+        .AddOtlpExporter(otlpOptions =>
+        {
+            otlpOptions.Endpoint = new Uri("http://localhost:4317");
+        })
+    );
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -215,6 +266,17 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     SeedData.Initialize(db);
 }
+
+// === Prometheus scraping endpoint ===
+app.MapPrometheusScrapingEndpoint(); // → /metrics
+
+//app.MapGet("/", () => Results.Ok(new { message = "Hello", time = DateTime.UtcNow }));
+
+//app.MapGet("/weather/{city}", async (string city, HttpClient httpClient) =>
+//{
+//    var weather = await httpClient.GetStringAsync($"https://wttr.in/" + city + "?format=3");
+//    return Results.Content(weather, "text/plain");
+//});
 
 app.Run();
 

@@ -1,0 +1,45 @@
+﻿receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:9464"
+  debug:
+    verbosity: detailed
+  elasticsearch:
+    endpoints: ["http://elasticsearch:9200"]
+    index: "otel-%{resource.attributes.service.name}-%Y-%m-%d"
+    # user: elastic
+    # password: changeme
+    tls:
+      insecure: true
+    # mapping:
+    #   mode: "ecs"
+  zipkin:
+    endpoint: "http://zipkin:9411/api/v2/spans"
+
+processors:
+  batch: {}
+  memory_limiter:
+    check_interval: 5s
+    limit_percentage: 75
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [zipkin, elasticsearch, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, elasticsearch, debug]  # ES для метрик
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [elasticsearch, debug]
